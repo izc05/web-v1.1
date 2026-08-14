@@ -82,21 +82,23 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
       </mesh>
 
       {/* Inner Core (The Earth Model) */}
-      {/* Rotated to exactly center London/Europe (Math.PI / 1.7 centers Longitude 0 roughly based on map) */}
-      <mesh scale={1.44} rotation={[0.45, Math.PI / 1.7, 0]}>
+      {/* Rotation Y near 0 correctly places London/Europe at the front (+Z) */}
+      <mesh scale={1.44} rotation={[0.45, -0.1, 0]}>
         <sphereGeometry args={[1, 64, 64]} />
-        <meshStandardMaterial
-          map={earthMap}
-          color="#ffffff"
-          emissive="#ffffff"
-          emissiveMap={earthMap}
-          emissiveIntensity={0.3}
-          roughness={0.5}
+        <meshPhysicalMaterial
+          color={MAGENTA}
+          transparent
+          opacity={0.85}
+          alphaMap={earthMap}
+          alphaTest={0.05}
+          emissive={MAGENTA}
+          emissiveIntensity={0.6}
+          roughness={0.2}
         />
       </mesh>
 
       {/* Inner lighting to pop the earth */}
-      <pointLight position={[0, 0, 1.5]} color="#ffffff" intensity={4} distance={6} />
+      <pointLight position={[0, 0, 1.5]} color={MAGENTA_LIGHT} intensity={2} distance={6} />
     </group>
   );
 }
