@@ -1,8 +1,7 @@
 import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { MeshTransmissionMaterial, Ring, Line } from "@react-three/drei";
+import { MeshTransmissionMaterial, Ring, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import gsap from "gsap";
 
 const MAGENTA = "#d62974";
 const MAGENTA_LIGHT = "#f4a7c8";
@@ -12,6 +11,9 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
   const coreRef = useRef<THREE.Mesh>(null);
   const haloRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
+
+  // Load the earth texture we downloaded
+  const earthMap = useTexture("/web-v1.1/earth.jpg");
 
   // Smooth dampening values
   const targetScale = useRef(1);
@@ -54,10 +56,10 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
       {/* Latitudes / Meridians (Wireframe illusion) */}
       <mesh>
         <sphereGeometry args={[1.52, 32, 32]} />
-        <meshBasicMaterial color={MAGENTA} wireframe transparent opacity={0.06} />
+        <meshBasicMaterial color={MAGENTA} wireframe transparent opacity={0.04} />
       </mesh>
 
-      {/* Main Glass Body */}
+      {/* Main Glass Body - Transparent shell */}
       <mesh
         ref={coreRef}
         onPointerOver={() => introComplete && setHovered(true)}
@@ -67,28 +69,29 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
         <MeshTransmissionMaterial
           backside
           backsideThickness={0.5}
-          thickness={1.2}
+          thickness={0.8}
           color="#ffffff"
-          roughness={0.05}
+          roughness={0.02}
           chromaticAberration={0.04}
-          anisotropicBlur={0.2}
+          anisotropicBlur={0.1}
           clearcoat={1}
-          clearcoatRoughness={0.1}
+          clearcoatRoughness={0.05}
           envMapIntensity={1.5}
           resolution={512}
         />
       </mesh>
 
-      {/* Inner Core (Pearl/Magenta Glow) */}
-      <mesh scale={0.9}>
-        <sphereGeometry args={[1.4, 64, 64]} />
+      {/* Inner Core (The Earth Model) */}
+      <mesh scale={1.42} rotation={[0, -Math.PI / 2, 0]}>
+        <sphereGeometry args={[1, 64, 64]} />
         <meshPhysicalMaterial
-          color="#fff0f5"
+          map={earthMap}
+          color="#ffd6e8"
           emissive={MAGENTA}
-          emissiveIntensity={0.1}
-          roughness={0.2}
-          transmission={0.5}
-          thickness={0.5}
+          emissiveIntensity={0.05}
+          roughness={0.4}
+          metalness={0.1}
+          clearcoat={0.5}
         />
       </mesh>
 

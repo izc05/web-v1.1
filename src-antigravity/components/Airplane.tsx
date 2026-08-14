@@ -41,8 +41,6 @@ export default function Airplane({ progressRef }: { progressRef: React.MutableRe
     flightPath.getTangentAt(t, tangent.current);
     
     // Bank angle (roll)
-    // We bank more when tangent is changing rapidly in X/Z
-    // For simplicity, we add a generic bank based on progress
     const bankAmount = Math.sin(t * Math.PI * 4) * 0.3;
     
     // Construct orientation matrix
@@ -61,31 +59,49 @@ export default function Airplane({ progressRef }: { progressRef: React.MutableRe
 
   return (
     <group ref={groupRef}>
-      {/* Fuselage */}
+      {/* Main Fuselage */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <capsuleGeometry args={[0.12, 0.8, 16, 16]} />
-        <meshPhysicalMaterial color={MAGENTA} clearcoat={1} clearcoatRoughness={0.1} roughness={0.2} />
+        <capsuleGeometry args={[0.15, 0.9, 32, 32]} />
+        <meshPhysicalMaterial color={MAGENTA} clearcoat={1} clearcoatRoughness={0.05} roughness={0.1} metalness={0.1} />
       </mesh>
       
-      {/* Wings */}
-      <mesh position={[0, -0.05, 0]} rotation={[0, 0, 0]}>
-        <boxGeometry args={[1.2, 0.04, 0.25]} />
-        <meshPhysicalMaterial color="#ffffff" clearcoat={1} clearcoatRoughness={0.1} roughness={0.2} />
+      {/* Cockpit Window */}
+      <mesh position={[0, 0.12, 0.3]} rotation={[0.4, 0, 0]}>
+        <boxGeometry args={[0.14, 0.08, 0.15]} />
+        <meshPhysicalMaterial color="#222222" roughness={0} metalness={0.8} clearcoat={1} />
       </mesh>
       
-      {/* Tail */}
-      <mesh position={[0, 0.1, 0.35]} rotation={[0.1, 0, 0]}>
-        <boxGeometry args={[0.04, 0.25, 0.15]} />
-        <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.2} />
+      {/* Main Wings */}
+      <mesh position={[0, -0.02, 0.1]} rotation={[0, 0, 0]}>
+        <boxGeometry args={[1.4, 0.03, 0.3]} />
+        <meshPhysicalMaterial color="#ffffff" clearcoat={1} clearcoatRoughness={0.05} roughness={0.1} />
       </mesh>
-      <mesh position={[0, 0, 0.38]}>
-        <boxGeometry args={[0.4, 0.04, 0.1]} />
-        <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.2} />
+
+      {/* Engines */}
+      <mesh position={[-0.35, -0.08, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.25, 16]} />
+        <meshPhysicalMaterial color="#dddddd" metalness={0.5} roughness={0.2} />
+      </mesh>
+      <mesh position={[0.35, -0.08, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.25, 16]} />
+        <meshPhysicalMaterial color="#dddddd" metalness={0.5} roughness={0.2} />
+      </mesh>
+      
+      {/* Tail (Vertical Stabilizer) */}
+      <mesh position={[0, 0.15, -0.35]} rotation={[0.2, 0, 0]}>
+        <boxGeometry args={[0.03, 0.3, 0.15]} />
+        <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.1} />
+      </mesh>
+      
+      {/* Horizontal Stabilizers */}
+      <mesh position={[0, 0.02, -0.38]}>
+        <boxGeometry args={[0.5, 0.03, 0.15]} />
+        <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.1} />
       </mesh>
       
       {/* Lights */}
-      <pointLight position={[-0.6, 0, 0]} color="#ff0000" intensity={0.5} distance={1} />
-      <pointLight position={[0.6, 0, 0]} color="#00ff00" intensity={0.5} distance={1} />
+      <pointLight position={[-0.7, 0, 0.1]} color="#ff0000" intensity={0.8} distance={1.5} />
+      <pointLight position={[0.7, 0, 0.1]} color="#00ff00" intensity={0.8} distance={1.5} />
     </group>
   );
 }
