@@ -1,10 +1,4 @@
-import {
-  Caustics,
-  Environment,
-  Lightformer,
-  MeshDistortMaterial,
-  MeshTransmissionMaterial,
-} from "@react-three/drei";
+import { MeshDistortMaterial, MeshTransmissionMaterial } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -49,38 +43,28 @@ function GlobeGrid() {
   );
 }
 
-function CrystalEnvironment() {
+function CrystalHalo() {
   return (
-    <Environment frames={1} resolution={128}>
-      <Lightformer
-        intensity={3.2}
-        color="#ffffff"
-        position={[0, 4, 4]}
-        scale={[8, 3, 1]}
-        rotation={[Math.PI / 2, 0, 0]}
-      />
-      <Lightformer
-        intensity={2.4}
-        color="#ffd7e8"
-        position={[-4, 1.5, 1]}
-        scale={[3, 7, 1]}
-        rotation={[0, Math.PI / 2, 0]}
-      />
-      <Lightformer
-        intensity={2.1}
-        color="#d62974"
-        position={[4, -0.5, 0]}
-        scale={[2, 6, 1]}
-        rotation={[0, -Math.PI / 2, 0]}
-      />
-      <Lightformer
-        form="ring"
-        intensity={1.9}
-        color="#fff1f7"
-        position={[0, 0, -4]}
-        scale={[5, 5, 1]}
-      />
-    </Environment>
+    <group position={[0, 0, -0.55]} rotation={[0.12, 0.18, 0]}>
+      <mesh>
+        <ringGeometry args={[1.72, 2.2, 96]} />
+        <meshBasicMaterial
+          color="#ef8fba"
+          transparent
+          opacity={0.06}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh rotation={[0, 0, Math.PI / 3.8]}>
+        <torusGeometry args={[2.05, 0.022, 10, 160]} />
+        <meshBasicMaterial color="#f4a9c8" transparent opacity={0.11} depthWrite={false} />
+      </mesh>
+      <mesh rotation={[0, 0, -Math.PI / 4.5]}>
+        <torusGeometry args={[1.9, 0.01, 8, 160]} />
+        <meshBasicMaterial color="#fff1f7" transparent opacity={0.3} depthWrite={false} />
+      </mesh>
+    </group>
   );
 }
 
@@ -137,84 +121,72 @@ export default function GlobeScene({ reducedMotion }: { reducedMotion: boolean }
   });
 
   return (
-    <>
-      <CrystalEnvironment />
+    <group ref={globe} position={GLOBE_POSITION}>
+      <CrystalHalo />
 
-      <group ref={globe} position={GLOBE_POSITION}>
-        <mesh position={[0, 0, -0.32]} scale={1.13}>
-          <sphereGeometry args={[1.46, 64, 64]} />
-          <meshBasicMaterial
-            color="#f5a8ca"
-            transparent
-            opacity={0.055}
-            side={THREE.BackSide}
-            depthWrite={false}
-          />
-        </mesh>
-
-        <mesh ref={inner}>
-          <sphereGeometry args={[1.04, 72, 72]} />
-          <MeshDistortMaterial
-            color="#f6a9c9"
-            emissive="#d62974"
-            emissiveIntensity={0.08}
-            roughness={0.46}
-            metalness={0}
-            transparent
-            opacity={0.34}
-            depthWrite={false}
-            distort={reducedMotion ? 0 : 0.075}
-            speed={reducedMotion ? 0 : 0.45}
-          />
-        </mesh>
-
-        <Caustics
-          causticsOnly={false}
-          backside={false}
-          color={[1, 0.77, 0.86]}
-          lightSource={[-2.2, 3.8, 4.2]}
-          intensity={0.0035}
-          worldRadius={0.045}
-          ior={1.16}
-        >
-          <mesh ref={core}>
-            <sphereGeometry args={[1.37, 96, 96]} />
-            <MeshTransmissionMaterial
-              backside
-              backsideThickness={0.2}
-              thickness={0.48}
-              color="#ffd9e8"
-              roughness={0.07}
-              chromaticAberration={0.018}
-              anisotropicBlur={0.16}
-              clearcoat={1}
-              clearcoatRoughness={0.05}
-              envMapIntensity={1.9}
-            />
-          </mesh>
-        </Caustics>
-
-        <GlobeGrid />
-
-        <mesh rotation={[Math.PI / 2.6, 0.22, -0.08]}>
-          <torusGeometry args={[1.82, 0.018, 12, 180]} />
-          <meshBasicMaterial color="#d62974" transparent opacity={0.31} depthWrite={false} />
-        </mesh>
-
-        <mesh rotation={[Math.PI / 2.75, 0.22, -0.08]}>
-          <torusGeometry args={[1.92, 0.006, 8, 180]} />
-          <meshBasicMaterial color="#ffb9d4" transparent opacity={0.38} depthWrite={false} />
-        </mesh>
-
-        <pointLight
-          ref={light}
-          position={[-0.7, 0.6, 2]}
-          color="#ef72aa"
-          intensity={10}
-          distance={6}
+      <mesh position={[0, 0, -0.32]} scale={1.13}>
+        <sphereGeometry args={[1.46, 64, 64]} />
+        <meshBasicMaterial
+          color="#f5a8ca"
+          transparent
+          opacity={0.055}
+          side={THREE.BackSide}
+          depthWrite={false}
         />
-        <pointLight position={[0.35, -0.15, -0.3]} color="#fff4f8" intensity={5.5} distance={3.8} />
-      </group>
-    </>
+      </mesh>
+
+      <mesh ref={inner}>
+        <sphereGeometry args={[1.04, 72, 72]} />
+        <MeshDistortMaterial
+          color="#f6a9c9"
+          emissive="#d62974"
+          emissiveIntensity={0.08}
+          roughness={0.46}
+          metalness={0}
+          transparent
+          opacity={0.34}
+          depthWrite={false}
+          distort={reducedMotion ? 0 : 0.075}
+          speed={reducedMotion ? 0 : 0.45}
+        />
+      </mesh>
+
+      <mesh ref={core}>
+        <sphereGeometry args={[1.37, 96, 96]} />
+        <MeshTransmissionMaterial
+          backside
+          backsideThickness={0.2}
+          thickness={0.48}
+          color="#ffd9e8"
+          roughness={0.07}
+          chromaticAberration={0.018}
+          anisotropicBlur={0.16}
+          clearcoat={1}
+          clearcoatRoughness={0.05}
+          envMapIntensity={1.25}
+        />
+      </mesh>
+
+      <GlobeGrid />
+
+      <mesh rotation={[Math.PI / 2.6, 0.22, -0.08]}>
+        <torusGeometry args={[1.82, 0.018, 12, 180]} />
+        <meshBasicMaterial color="#d62974" transparent opacity={0.31} depthWrite={false} />
+      </mesh>
+
+      <mesh rotation={[Math.PI / 2.75, 0.22, -0.08]}>
+        <torusGeometry args={[1.92, 0.006, 8, 180]} />
+        <meshBasicMaterial color="#ffb9d4" transparent opacity={0.38} depthWrite={false} />
+      </mesh>
+
+      <pointLight
+        ref={light}
+        position={[-0.7, 0.6, 2]}
+        color="#ef72aa"
+        intensity={10}
+        distance={6}
+      />
+      <pointLight position={[0.35, -0.15, -0.3]} color="#fff4f8" intensity={5.5} distance={3.8} />
+    </group>
   );
 }
