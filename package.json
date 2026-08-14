@@ -1,0 +1,30 @@
+{
+  "name": "language-school-intro",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build && node scripts/copy-lab-entry.mjs",
+    "check": "npm run build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "@react-three/drei": "10.7.8",
+    "@react-three/fiber": "9.6.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "three": "0.165.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@types/three": "^0.165.0",
+    "@vitejs/plugin-react": "^6.0.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
