@@ -4,7 +4,8 @@ Repositorio laboratorio para diseñar exclusivamente la entrada 3D de **Language
 
 ## Estado
 
-- FASE 0 — Foundation: en construcción
+- FASE 0 — Foundation: ✅ compilación validada
+- FASE 1 — Cielo / nubes perla: candidato en revisión
 - Ruta de laboratorio: `/lab-intro-3d/`
 - Home real: fuera de alcance hasta congelar la intro
 

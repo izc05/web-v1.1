@@ -1,70 +1,122 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float } from "@react-three/drei";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Cloud, Clouds } from "@react-three/drei";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-function FoundationMark({ reducedMotion }: { reducedMotion: boolean }) {
+function PearlCloudField({ reducedMotion }: { reducedMotion: boolean }) {
   const group = useRef<THREE.Group>(null);
-  const target = useMemo(() => new THREE.Vector2(), []);
 
   useFrame((state, delta) => {
     if (!group.current) return;
 
-    target.set(state.pointer.y * 0.12, state.pointer.x * 0.16);
-    group.current.rotation.x = THREE.MathUtils.damp(
-      group.current.rotation.x,
-      reducedMotion ? 0 : target.x,
-      4,
-      delta,
-    );
+    const targetX = reducedMotion ? 0 : state.pointer.x * -0.55;
+    const targetY = reducedMotion ? 0 : state.pointer.y * -0.34;
+    const targetZ = reducedMotion ? 0 : Math.sin(state.clock.elapsedTime * 0.22) * 0.16;
+
+    group.current.position.x = THREE.MathUtils.damp(group.current.position.x, targetX, 2.4, delta);
+    group.current.position.y = THREE.MathUtils.damp(group.current.position.y, targetY, 2.4, delta);
+    group.current.position.z = THREE.MathUtils.damp(group.current.position.z, targetZ, 1.8, delta);
     group.current.rotation.y = THREE.MathUtils.damp(
       group.current.rotation.y,
-      reducedMotion ? 0 : target.y + state.clock.elapsedTime * 0.08,
-      3,
+      reducedMotion ? 0 : state.pointer.x * 0.018,
+      2.2,
       delta,
     );
   });
 
+  const cloudSpeed = reducedMotion ? 0 : 0.08;
+
   return (
-    <Float speed={reducedMotion ? 0 : 1.2} rotationIntensity={0.08} floatIntensity={0.16}>
-      <group ref={group}>
-        <mesh>
-          <sphereGeometry args={[1.02, 64, 64]} />
-          <meshPhysicalMaterial
-            color="#f7c7db"
-            roughness={0.16}
-            metalness={0.03}
-            clearcoat={1}
-            clearcoatRoughness={0.08}
-          />
-        </mesh>
-
-        <mesh rotation={[Math.PI / 2.7, 0.22, 0.12]}>
-          <torusGeometry args={[1.35, 0.018, 16, 160]} />
-          <meshStandardMaterial color="#d62974" roughness={0.25} metalness={0.08} />
-        </mesh>
-
-        <mesh position={[1.18, 0.46, 0.52]}>
-          <sphereGeometry args={[0.07, 24, 24]} />
-          <meshStandardMaterial color="#d62974" emissive="#d62974" emissiveIntensity={0.35} />
-        </mesh>
-      </group>
-    </Float>
+    <group ref={group}>
+      <Clouds limit={220} material={THREE.MeshLambertMaterial}>
+        <Cloud
+          seed={11}
+          position={[-5.2, 2.25, -5.4]}
+          bounds={[5.8, 2.1, 2.5]}
+          segments={28}
+          volume={7}
+          growth={6}
+          fade={24}
+          opacity={0.32}
+          speed={cloudSpeed}
+        />
+        <Cloud
+          seed={17}
+          position={[5.4, 2.5, -4.5]}
+          bounds={[5, 2, 2.2]}
+          segments={26}
+          volume={6}
+          growth={5.5}
+          fade={22}
+          opacity={0.29}
+          speed={cloudSpeed * 0.8}
+        />
+        <Cloud
+          seed={23}
+          position={[-5.3, -2.05, -1.2]}
+          bounds={[5.4, 2.4, 2.6]}
+          segments={30}
+          volume={7}
+          growth={6}
+          fade={20}
+          opacity={0.38}
+          speed={cloudSpeed * 1.15}
+        />
+        <Cloud
+          seed={29}
+          position={[5.5, -1.9, -0.5]}
+          bounds={[5.6, 2.25, 2.6]}
+          segments={30}
+          volume={7}
+          growth={6.2}
+          fade={20}
+          opacity={0.38}
+          speed={cloudSpeed}
+        />
+        <Cloud
+          seed={31}
+          position={[-7.2, 0.3, 2.4]}
+          bounds={[4.4, 2, 1.8]}
+          segments={24}
+          volume={5}
+          growth={5}
+          fade={18}
+          opacity={0.22}
+          speed={cloudSpeed * 0.7}
+        />
+        <Cloud
+          seed={37}
+          position={[7.1, 0.55, 2.6]}
+          bounds={[4.2, 1.9, 1.8]}
+          segments={24}
+          volume={5}
+          growth={5}
+          fade={18}
+          opacity={0.22}
+          speed={cloudSpeed * 0.7}
+        />
+      </Clouds>
+    </group>
   );
 }
 
-function Scene({ reducedMotion }: { reducedMotion: boolean }) {
+function AtmosphereScene({ reducedMotion }: { reducedMotion: boolean }) {
   return (
     <Canvas
       dpr={[1, 1.5]}
-      camera={{ position: [0, 0, 5.4], fov: 35, near: 0.1, far: 50 }}
-      gl={{ antialias: true, powerPreference: "high-performance" }}
+      camera={{ position: [0, 0, 8.5], fov: 46, near: 0.1, far: 60 }}
+      gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
     >
-      <color attach="background" args={["#fff9fc"]} />
-      <ambientLight intensity={1.7} />
-      <directionalLight position={[4, 5, 6]} intensity={2.8} color="#ffffff" />
-      <pointLight position={[-4, -1, 3]} intensity={32} color="#f1a8ca" distance={12} />
-      <FoundationMark reducedMotion={reducedMotion} />
+      <color attach="background" args={["#fffafc"]} />
+      <fog attach="fog" args={["#fff7fb", 9, 30]} />
+
+      <ambientLight intensity={2.4} />
+      <hemisphereLight args={["#ffffff", "#f2b3cf", 1.7]} />
+      <directionalLight position={[4, 8, 7]} intensity={2.7} color="#ffffff" />
+      <pointLight position={[-5, 2, 5]} intensity={28} color="#f7c3dc" distance={18} />
+      <pointLight position={[6, -2, 3]} intensity={20} color="#e869a6" distance={16} />
+
+      <PearlCloudField reducedMotion={reducedMotion} />
     </Canvas>
   );
 }
@@ -83,22 +135,25 @@ export default function App() {
   return (
     <main className="intro-lab">
       <div className="canvas-wrap" aria-hidden="true">
-        <Scene reducedMotion={reducedMotion} />
+        <AtmosphereScene reducedMotion={reducedMotion} />
       </div>
 
-      <section className="identity" aria-label="Language School Rocío Ruiz">
-        <p className="phase">FASE 0 · FOUNDATION</p>
-        <div className="wordmark">
-          <span className="language">LANGUAGE</span>
-          <span className="school">School</span>
-          <span className="rocio">ROCÍO RUIZ</span>
-        </div>
-        <p className="status">Laboratorio 3D activo · WebGL / R3F / Drei</p>
+      <div className="soft-glow glow-a" aria-hidden="true" />
+      <div className="soft-glow glow-b" aria-hidden="true" />
+
+      <section className="lab-panel" aria-label="Estado del laboratorio 3D">
+        <p className="phase">FASE 1 · ATMÓSFERA</p>
+        <p className="phase-title">Cielo perla</p>
+        <p className="phase-copy">Un corredor limpio entre nubes suaves, preparado para recibir el avión.</p>
       </section>
 
       <div className="corner-note" aria-hidden="true">
         <span className="dot" />
-        FOUNDATION ONLINE
+        MUEVE EL CURSOR · PROFUNDIDAD SUAVE
+      </div>
+
+      <div className="center-guide" aria-hidden="true">
+        <span />
       </div>
     </main>
   );
