@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fff9fc" />
+    <meta
+      name="description"
+      content="Laboratorio 3D de la entrada de Language School · Rocío Ruiz"
+    />
+    <title>Language School · Intro 3D Lab</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      if (location.pathname === "/web-v1.1/" || location.pathname === "/") {
+        location.replace(`${location.pathname}lab-intro-3d/`);
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
