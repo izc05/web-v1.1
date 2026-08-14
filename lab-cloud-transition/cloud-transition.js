@@ -1,121 +1,281 @@
 /**
- * ☁️ Cloud Page Transition
+ * ☁️ Cloud Page Transition — PREMIUM EDITION
  * Language School · Rocío Ruiz
  *
- * Drop-in module: <script type="module" src="cloud-transition.js"></script>
- * Intercepts <a> clicks and [data-cloud-link] buttons,
- * plays a volumetric pink cloud flythrough, then navigates.
+ * Volumetric clouds with procedural Perlin noise shader.
+ * Multiple billboard layers, cinematic camera shake, lightning flash.
+ *
+ * Usage: <script type="module" src="cloud-transition.js"></script>
  */
 
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-const DURATION    = 1600; // ms total
-const FLY_START   = 0.15; // fraction when camera starts flying in
-const FADE_START  = 0.80; // fraction when white fade starts
-const MAGENTA     = new THREE.Color("#d62974");
-const MAGENTA_MID = new THREE.Color("#f4a7c8");
-const WHITE       = new THREE.Color("#fffcfd");
-const BG          = new THREE.Color("#fffcfd");
+// ─── Palette ──────────────────────────────────────────────────────────────────
+const C_DEEP    = new THREE.Color("#c2185b"); // deep magenta core
+const C_MID     = new THREE.Color("#e91e8c"); // vivid pink
+const C_SOFT    = new THREE.Color("#f8bbd0"); // petal pink
+const C_HAZE    = new THREE.Color("#fce4ec"); // almost white blush
+const C_WHITE   = new THREE.Color("#ffffff");
+const C_BG      = new THREE.Color("#fffcfd");
 
-// ─── Cloud particle shader ────────────────────────────────────────────────────
+// ─── Timing ───────────────────────────────────────────────────────────────────
+const DURATION  = 1800; // ms
+
+// ─── Shaders ─────────────────────────────────────────────────────────────────
+
+/** Simplex-based cloud billboard vertex */
 const cloudVert = /* glsl */`
-  attribute float aSize;
-  attribute float aAlpha;
+  varying vec2  vUv;
+  varying float vDepth;
   varying float vAlpha;
+  attribute float aDepth;
+  attribute float aAlpha;
+  attribute float aRotSpeed;
+  attribute float aScale;
+
   uniform float uTime;
   uniform float uProgress;
 
   void main() {
+    vUv = uv;
     vAlpha = aAlpha;
-    vec3 pos = position;
-    // Drift forward
-    pos.z += uProgress * 18.0;
-    // Gentle swirl
-    float angle = uTime * 0.15 + pos.x * 0.3;
-    pos.x += sin(angle) * 0.4;
-    pos.y += cos(angle * 0.7) * 0.2;
+    vDepth = aDepth;
 
-    vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
-    gl_PointSize = aSize * (300.0 / -mvPos.z);
-    gl_Position = projectionMatrix * mvPos;
+    // Fly position: push each cloud layer toward camera
+    vec3 pos = position;
+    float zShift = uProgress * 28.0 * (0.5 + aDepth * 0.5);
+    pos.z += zShift;
+
+    // Slight swirl drift
+    float drift = uTime * 0.08 * (1.0 + aDepth * 0.5);
+    pos.x += sin(drift + aDepth * 6.28) * 0.6;
+    pos.y += cos(drift * 0.7 + aDepth * 3.14) * 0.3;
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `;
 
+/** Procedural cloud fragment using value noise */
 const cloudFrag = /* glsl */`
+  varying vec2  vUv;
+  varying float vDepth;
   varying float vAlpha;
-  uniform vec3  uColor;
+
+  uniform float uTime;
+  uniform float uProgress;
   uniform float uFade;
+  uniform vec3  uColorA;
+  uniform vec3  uColorB;
+
+  // ── Value noise ────────────────────────────────────────────────────────────
+  float hash(vec2 p) {
+    p = fract(p * vec2(127.1, 311.7));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i + vec2(0,0)), hash(i + vec2(1,0)), u.x),
+      mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x),
+      u.y
+    );
+  }
+  float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 5; i++) {
+      v += a * noise(p);
+      p  = p * 2.1 + vec2(1.7, 9.2);
+      a *= 0.5;
+    }
+    return v;
+  }
 
   void main() {
-    // Soft circle
-    vec2 uv = gl_PointCoord - 0.5;
-    float d = length(uv);
-    if (d > 0.5) discard;
-    float soft = 1.0 - smoothstep(0.2, 0.5, d);
-    float alpha = soft * vAlpha * (1.0 - uFade);
-    gl_FragColor = vec4(mix(uColor, vec3(1.0), uFade), alpha);
+    // Center the UV so 0,0 is middle
+    vec2 uv = vUv - 0.5;
+
+    // Distance from center with slight stretch
+    float d = length(uv * vec2(1.0, 1.3));
+
+    // Hard circular mask
+    if (d > 0.48) discard;
+
+    // Soft edge
+    float edgeFade = 1.0 - smoothstep(0.25, 0.48, d);
+
+    // Animated cloud noise
+    float t   = uTime * 0.06 + vDepth * 4.3;
+    vec2 flow = vec2(t, t * 0.6);
+    float cloud = fbm(uv * 2.8 + flow);
+    cloud = pow(cloud, 1.4);
+
+    // Build alpha from noise + edge
+    float alpha = cloud * edgeFade * vAlpha;
+    alpha *= (1.0 - uFade * 1.4);
+    alpha = clamp(alpha, 0.0, 1.0);
+
+    // Color: blend depth-based warm pink to soft haze
+    vec3 col = mix(uColorA, uColorB, cloud * 0.7 + vDepth * 0.3);
+    // Exposure boost near edges
+    col = mix(col, vec3(1.0), uFade * 0.85);
+
+    gl_FragColor = vec4(col, alpha);
   }
 `;
 
-// ─── Scene builder ────────────────────────────────────────────────────────────
-function buildScene() {
-  const scene    = new THREE.Scene();
-  scene.background = BG.clone();
-  scene.fog      = new THREE.Fog(BG, 1, 22);
+/** Full-screen quad for final white flash */
+const flashVert = /* glsl */`
+  void main() { gl_Position = vec4(position, 1.0); }
+`;
+const flashFrag = /* glsl */`
+  uniform float uOpacity;
+  uniform vec3  uColor;
+  void main() { gl_FragColor = vec4(uColor, uOpacity); }
+`;
 
-  // ── Cloud layers ──────────────────────────────────────────────────────────
-  const COUNT     = 1200;
-  const positions = new Float32Array(COUNT * 3);
-  const sizes     = new Float32Array(COUNT);
-  const alphas    = new Float32Array(COUNT);
+// ─── Build scene ──────────────────────────────────────────────────────────────
+function buildScene(renderer) {
+  const scene = new THREE.Scene();
+  scene.background = C_BG.clone();
+  scene.fog = new THREE.FogExp2(C_HAZE, 0.055);
+
+  // ── Cloud billboards ───────────────────────────────────────────────────────
+  const COUNT   = 80; // billboarded planes
+  const LAYERS  = 5;
+
+  const cloudMat = new THREE.ShaderMaterial({
+    vertexShader:   cloudVert,
+    fragmentShader: cloudFrag,
+    uniforms: {
+      uTime:    { value: 0 },
+      uProgress:{ value: 0 },
+      uFade:    { value: 0 },
+      uColorA:  { value: C_MID.clone() },
+      uColorB:  { value: C_HAZE.clone() },
+    },
+    transparent:  true,
+    depthWrite:   false,
+    blending:     THREE.NormalBlending,
+    side:         THREE.DoubleSide,
+  });
+
+  const baseGeo = new THREE.PlaneGeometry(1, 1, 1, 1);
 
   for (let i = 0; i < COUNT; i++) {
-    const spread = 14;
-    const depth  = 20; // z spread behind camera
-    positions[i * 3 + 0] = (Math.random() - 0.5) * spread;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * spread * 0.6;
-    positions[i * 3 + 2] = -(Math.random() * depth);
+    const mat  = cloudMat.clone();
+    const mesh = new THREE.Mesh(baseGeo, mat);
 
-    // Larger particles toward center
-    const distFromCenter = Math.sqrt(
-      positions[i * 3] ** 2 + positions[i * 3 + 1] ** 2
+    const layer = i % LAYERS;
+    const depth  = layer / (LAYERS - 1); // 0 (far) → 1 (near)
+
+    // Position: spread across a tunnel
+    const angle  = (i / COUNT) * Math.PI * 2 * 3.7;
+    const radius = THREE.MathUtils.randFloat(1.5, 6.5) * (1 - depth * 0.3);
+    const zPos   = -depth * 22 - Math.random() * 6;
+
+    mesh.position.set(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius * 0.7,
+      zPos
     );
-    sizes[i]  = THREE.MathUtils.randFloat(20, 90) * Math.max(0.1, 1 - distFromCenter / 14);
-    alphas[i] = THREE.MathUtils.randFloat(0.3, 0.85);
+
+    // Scale varies by layer (nearer = bigger)
+    const scale = THREE.MathUtils.randFloat(3, 8) * (0.5 + depth * 0.8);
+    mesh.scale.set(scale, scale * THREE.MathUtils.randFloat(0.7, 1.1), 1);
+
+    // Random rotation
+    mesh.rotation.z = Math.random() * Math.PI * 2;
+
+    // Per-instance uniforms via vertex attributes (shared across 4 verts)
+    const depths = new Float32Array(4).fill(depth);
+    const alphas = new Float32Array(4).fill(THREE.MathUtils.randFloat(0.55, 0.9));
+    const geo    = baseGeo.clone();
+    geo.setAttribute("aDepth", new THREE.BufferAttribute(depths, 1));
+    geo.setAttribute("aAlpha", new THREE.BufferAttribute(alphas, 1));
+    geo.setAttribute("aRotSpeed", new THREE.BufferAttribute(new Float32Array(4).fill(0), 1));
+    geo.setAttribute("aScale",    new THREE.BufferAttribute(new Float32Array(4).fill(scale), 1));
+    mesh.geometry = geo;
+
+    // Store depth for sorting
+    mesh.userData.depth = depth;
+    mesh.userData.mat   = mat;
+
+    scene.add(mesh);
   }
 
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute("aSize",    new THREE.BufferAttribute(sizes,     1));
-  geo.setAttribute("aAlpha",   new THREE.BufferAttribute(alphas,    1));
-
-  const mat = new THREE.ShaderMaterial({
+  // ── Center bright core (glowing heart of the storm) ───────────────────────
+  const coreMat = new THREE.ShaderMaterial({
     vertexShader:   cloudVert,
     fragmentShader: cloudFrag,
     uniforms: {
       uTime:     { value: 0 },
       uProgress: { value: 0 },
-      uColor:    { value: MAGENTA_MID.clone() },
       uFade:     { value: 0 },
+      uColorA:   { value: C_DEEP.clone() },
+      uColorB:   { value: C_SOFT.clone() },
     },
     transparent: true,
     depthWrite:  false,
     blending:    THREE.AdditiveBlending,
+    side:        THREE.DoubleSide,
   });
+  for (let i = 0; i < 12; i++) {
+    const mesh = new THREE.Mesh(baseGeo.clone(), coreMat.clone());
+    mesh.position.set(
+      (Math.random() - 0.5) * 2,
+      (Math.random() - 0.5) * 1.5,
+      -2 - Math.random() * 8
+    );
+    const s = THREE.MathUtils.randFloat(1.5, 4);
+    mesh.scale.set(s, s, 1);
+    mesh.rotation.z = Math.random() * Math.PI * 2;
+    const depths = new Float32Array(4).fill(0.8);
+    const alphas = new Float32Array(4).fill(THREE.MathUtils.randFloat(0.3, 0.6));
+    mesh.geometry.setAttribute("aDepth", new THREE.BufferAttribute(depths, 1));
+    mesh.geometry.setAttribute("aAlpha", new THREE.BufferAttribute(alphas, 1));
+    mesh.geometry.setAttribute("aRotSpeed", new THREE.BufferAttribute(new Float32Array(4), 1));
+    mesh.geometry.setAttribute("aScale",    new THREE.BufferAttribute(new Float32Array(4).fill(s), 1));
+    mesh.userData.mat = coreMat.clone();
+    scene.add(mesh);
+  }
 
-  const points = new THREE.Points(geo, mat);
-  scene.add(points);
+  // ── Lightning point light ──────────────────────────────────────────────────
+  const flashLight = new THREE.PointLight(C_MID, 0, 40);
+  flashLight.position.set(0, 3, -6);
+  scene.add(flashLight);
+  const flashLight2 = new THREE.PointLight(C_SOFT, 0, 25);
+  flashLight2.position.set(-4, -2, -10);
+  scene.add(flashLight2);
 
-  // ── Lightning flash light ─────────────────────────────────────────────────
-  const flash = new THREE.PointLight(MAGENTA, 0, 30);
-  flash.position.set(0, 2, -8);
-  scene.add(flash);
+  // Ambient warm glow
+  scene.add(new THREE.AmbientLight(C_HAZE, 1.2));
+  const dir = new THREE.DirectionalLight(C_SOFT, 1.5);
+  dir.position.set(5, 5, 5);
+  scene.add(dir);
 
-  // ── Ambient ───────────────────────────────────────────────────────────────
-  scene.add(new THREE.AmbientLight(WHITE, 0.5));
+  // ── Full-screen flash quad ─────────────────────────────────────────────────
+  const fsGeo = new THREE.PlaneGeometry(2, 2);
+  const fsMat = new THREE.ShaderMaterial({
+    vertexShader:   flashVert,
+    fragmentShader: flashFrag,
+    uniforms: {
+      uOpacity: { value: 0 },
+      uColor:   { value: C_WHITE.clone() },
+    },
+    transparent: true,
+    depthTest:   false,
+    depthWrite:  false,
+  });
+  const fsQuad = new THREE.Mesh(fsGeo, fsMat);
 
-  return { scene, mat, flash };
+  const fsScene  = new THREE.Scene();
+  const fsCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  fsScene.add(fsQuad);
+
+  return { scene, cloudMat, coreMat, flashLight, flashLight2, fsMat, fsScene, fsCamera };
 }
 
 // ─── Overlay canvas ───────────────────────────────────────────────────────────
@@ -126,68 +286,139 @@ function createOverlay() {
     inset:         "0",
     zIndex:        "99999",
     opacity:       "0",
-    transition:    "opacity 0.12s ease",
+    transition:    "opacity 0.1s ease",
     pointerEvents: "none",
-    width:         "100%",
-    height:        "100%",
+    width:         "100vw",
+    height:        "100vh",
+    display:       "block",
   });
   document.body.appendChild(canvas);
   return canvas;
 }
 
-// ─── Main transition runner ───────────────────────────────────────────────────
+// ─── Run the transition ───────────────────────────────────────────────────────
 function runTransition(href) {
   const canvas = createOverlay();
+  const W = window.innerWidth, H = window.innerHeight;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(W, H);
+  renderer.sortObjects = true;
 
-  const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 50);
-  camera.position.set(0, 0, 6);
+  const camera = new THREE.PerspectiveCamera(72, W / H, 0.01, 60);
+  camera.position.set(0, 0, 8);
 
-  const { scene, mat, flash } = buildScene();
+  const { scene, cloudMat, coreMat, flashLight, flashLight2, fsMat, fsScene, fsCamera } =
+    buildScene(renderer);
 
-  // Show canvas
+  // Fade in
   requestAnimationFrame(() => { canvas.style.opacity = "1"; });
 
-  const startTime = performance.now();
+  const startTime   = performance.now();
   let rafId;
-  let nextFlash = 0.3;
+  let nextFlash     = 0.18;
+  let shakeDecay    = 0;
+  const shake       = new THREE.Vector3();
 
   function tick(now) {
     rafId = requestAnimationFrame(tick);
-    const elapsed  = now - startTime;
-    const progress = Math.min(elapsed / DURATION, 1);
 
-    mat.uniforms.uTime.value     = elapsed * 0.001;
-    mat.uniforms.uProgress.value = progress;
+    const elapsed  = (now - startTime) * 0.001;
+    const progress = Math.min(elapsed / (DURATION * 0.001), 1);
+    const t        = elapsed;
 
-    // Color shifts pink → white as we exit
-    const col = MAGENTA_MID.clone().lerp(WHITE, Math.max(0, (progress - 0.6) / 0.4));
-    mat.uniforms.uColor.value.copy(col);
+    // ── Update all cloud meshes ──────────────────────────────────────────────
+    scene.traverse((obj) => {
+      if (obj.isMesh && obj.userData.mat) {
+        const m = obj.material;
+        if (m.uniforms) {
+          m.uniforms.uTime.value     = t;
+          m.uniforms.uProgress.value = progress;
+          m.uniforms.uFade.value     = Math.max(0, (progress - 0.78) / 0.22);
+        }
+        // Billboard: face camera
+        obj.quaternion.copy(camera.quaternion);
+      }
+    });
 
-    // Fade overlay to white
-    const fade = Math.max(0, (progress - FADE_START) / (1 - FADE_START));
-    mat.uniforms.uFade.value = fade;
-    scene.background.lerpColors(BG, WHITE, fade);
+    // ── Camera: accelerating dive ────────────────────────────────────────────
+    const flyP = Math.min(progress / 0.9, 1);
+    const ease = flyP < 0.5
+      ? 2 * flyP * flyP
+      : 1 - Math.pow(-2 * flyP + 2, 3) / 2; // ease-in-out-cubic
 
-    // Camera flies forward into clouds
-    const flyProgress = Math.max(0, (progress - FLY_START) / (1 - FLY_START));
-    camera.position.z = 6 - flyProgress * 9;
-    camera.position.y = Math.sin(flyProgress * Math.PI) * 0.5;
+    camera.position.z = 8 - ease * 13.5;
+    camera.position.y = Math.sin(ease * Math.PI) * 0.8;
 
-    // Lightning flash
-    if (progress > nextFlash && progress < 0.75) {
-      flash.intensity = THREE.MathUtils.randFloat(8, 18);
-      flash.color.copy(Math.random() > 0.5 ? MAGENTA : WHITE);
-      nextFlash = progress + THREE.MathUtils.randFloat(0.08, 0.2);
-      setTimeout(() => { flash.intensity = 0; }, 60);
+    // Subtle spiral
+    const spiral = ease * Math.PI * 0.4;
+    camera.position.x = Math.sin(spiral) * ease * 0.6;
+    camera.rotation.z = Math.sin(ease * Math.PI) * 0.04;
+
+    // ── Camera shake on lightning ────────────────────────────────────────────
+    if (shakeDecay > 0) {
+      shakeDecay -= 0.05;
+      shake.set(
+        (Math.random() - 0.5) * 0.08 * shakeDecay,
+        (Math.random() - 0.5) * 0.06 * shakeDecay,
+        0
+      );
+      camera.position.add(shake);
     }
 
-    renderer.render(scene, camera);
+    // ── Colour shift: deep magenta → petal pink as we exit ──────────────────
+    const exitP = Math.max(0, (progress - 0.55) / 0.45);
+    const curA  = C_MID.clone().lerp(C_HAZE,  exitP);
+    const curB  = C_SOFT.clone().lerp(C_WHITE, exitP);
+    scene.traverse((obj) => {
+      if (obj.isMesh && obj.material?.uniforms?.uColorA) {
+        obj.material.uniforms.uColorA.value.copy(curA);
+        obj.material.uniforms.uColorB.value.copy(curB);
+      }
+    });
 
-    // Navigate when done
+    // Fog brightens
+    scene.fog.color.lerpColors(C_HAZE, C_WHITE, exitP);
+    scene.background.lerpColors(C_BG, C_WHITE, Math.max(0, (progress - 0.82) / 0.18));
+
+    // ── Lightning flash ──────────────────────────────────────────────────────
+    if (progress > nextFlash && progress < 0.72) {
+      const intensity = THREE.MathUtils.randFloat(12, 30);
+      flashLight.intensity  = intensity;
+      flashLight2.intensity = intensity * 0.6;
+      flashLight.color.copy(Math.random() > 0.4 ? C_MID : C_SOFT);
+
+      // Camera shake
+      shakeDecay = 1.0;
+
+      // Quick full-screen flash (white/rose)
+      fsMat.uniforms.uColor.value.copy(Math.random() > 0.5 ? C_WHITE : C_SOFT);
+      fsMat.uniforms.uOpacity.value = THREE.MathUtils.randFloat(0.3, 0.65);
+
+      // Schedule fade-off
+      const decayTime = THREE.MathUtils.randInt(50, 110);
+      setTimeout(() => {
+        flashLight.intensity  = 0;
+        flashLight2.intensity = 0;
+        fsMat.uniforms.uOpacity.value = 0;
+      }, decayTime);
+
+      nextFlash = progress + THREE.MathUtils.randFloat(0.07, 0.18);
+    }
+
+    // Final white out
+    const finalFade = Math.max(0, (progress - 0.85) / 0.15);
+    fsMat.uniforms.uColor.value.copy(C_WHITE);
+    fsMat.uniforms.uOpacity.value = Math.max(fsMat.uniforms.uOpacity.value, finalFade);
+
+    // ── Render ───────────────────────────────────────────────────────────────
+    renderer.autoClear = true;
+    renderer.render(scene, camera);
+    renderer.autoClear = false;
+    renderer.render(fsScene, fsCamera);
+
+    // ── Done ─────────────────────────────────────────────────────────────────
     if (progress >= 1) {
       cancelAnimationFrame(rafId);
       renderer.dispose();
@@ -198,7 +429,7 @@ function runTransition(href) {
   requestAnimationFrame(tick);
 }
 
-// ─── Click interceptor ────────────────────────────────────────────────────────
+// ─── Interceptor ─────────────────────────────────────────────────────────────
 document.addEventListener("click", (e) => {
   const anchor = e.target.closest("a[href], [data-cloud-link]");
   if (!anchor) return;
@@ -206,10 +437,10 @@ document.addEventListener("click", (e) => {
   const href = anchor.getAttribute("href") || anchor.dataset.cloudLink;
   if (!href) return;
 
-  // Skip: external, mailto, tel, hash-only anchors
-  const isExternal = /^https?:\/\//.test(href) && !href.includes("localhost") && !href.includes("127.0.0.1");
-  if (isExternal) return;
-  if (/^(mailto:|tel:|#)/.test(href)) return;
+  // Skip external, mailto, tel, hash-only
+  const isExternal = /^https?:\/\//.test(href) &&
+    !href.includes("localhost") && !href.includes("127.0.0.1");
+  if (isExternal || /^(mailto:|tel:|#)/.test(href)) return;
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
   if (anchor.target === "_blank") return;
 
@@ -217,4 +448,4 @@ document.addEventListener("click", (e) => {
   runTransition(href);
 }, { capture: true });
 
-console.log("☁️ Cloud Transition ready — Language School Rocío Ruiz");
+console.log("☁️ Cloud Transition [PREMIUM] ready — Language School Rocío Ruiz");
