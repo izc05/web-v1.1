@@ -1,4 +1,4 @@
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import FlightScene from "./FlightScene";
@@ -95,7 +95,7 @@ function PearlCloudField({
   );
 }
 
-function AtmosphereScene({
+function CinematicCameraRig({
   reducedMotion,
   settled,
   transitioning,
@@ -104,11 +104,52 @@ function AtmosphereScene({
   settled: boolean;
   transitioning: boolean;
 }) {
+  const { camera } = useThree();
+  const lookTarget = useMemo(() => new THREE.Vector3(0.25, 0.04, -1.25), []);
+
+  useFrame((state, delta) => {
+    let targetX = 0;
+    let targetY = 0;
+    let targetZ = 8.5;
+
+    if (!reducedMotion && !transitioning) {
+      if (settled) {
+        targetX = state.pointer.x * 0.14;
+        targetY = state.pointer.y * 0.08;
+        targetZ = 8.42 + Math.abs(state.pointer.x) * 0.035;
+      } else {
+        const intro = THREE.MathUtils.clamp(state.clock.elapsedTime / (INTRO_MS / 1000), 0, 1);
+        targetX = Math.sin(intro * Math.PI) * -0.12;
+        targetY = Math.sin(intro * Math.PI * 1.4) * 0.055;
+        targetZ = THREE.MathUtils.lerp(8.72, 8.42, THREE.MathUtils.smoothstep(intro, 0, 1));
+      }
+    }
+
+    camera.position.x = THREE.MathUtils.damp(camera.position.x, targetX, transitioning ? 5.5 : 2.5, delta);
+    camera.position.y = THREE.MathUtils.damp(camera.position.y, targetY, transitioning ? 5.5 : 2.5, delta);
+    camera.position.z = THREE.MathUtils.damp(camera.position.z, targetZ, transitioning ? 5.8 : 2.4, delta);
+    camera.lookAt(lookTarget);
+  });
+
+  return null;
+}
+
+function AtmosphereScene({
+  reducedMotion,
+  settled,
+  transitioning,
+  dprCap,
+}: {
+  reducedMotion: boolean;
+  settled: boolean;
+  transitioning: boolean;
+  dprCap: number;
+}) {
   return (
     <Canvas
-      dpr={[1, 1.5]}
+      dpr={[1, dprCap]}
       camera={{ position: [0, 0, 8.5], fov: 46, near: 0.1, far: 60 }}
-      gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
+      gl={{ antialias: dprCap > 1.2, powerPreference: "high-performance", alpha: false }}
     >
       <color attach="background" args={["#fffafc"]} />
       <fog attach="fog" args={["#fff7fb", 9, 30]} />
@@ -117,6 +158,7 @@ function AtmosphereScene({
       <directionalLight position={[4, 8, 7]} intensity={2.4} color="#ffffff" />
       <pointLight position={[-5, 2, 5]} intensity={25} color="#f7c3dc" distance={18} />
       <pointLight position={[6, -2, 3]} intensity={18} color="#e869a6" distance={16} />
+      <CinematicCameraRig reducedMotion={reducedMotion} settled={settled} transitioning={transitioning} />
       <PearlCloudField reducedMotion={reducedMotion} settled={settled} transitioning={transitioning} />
       <GlobeScene reducedMotion={reducedMotion} interactive={settled && !transitioning} transitioning={transitioning} />
       <FlightScene reducedMotion={reducedMotion} settled={settled} />
@@ -126,6 +168,7 @@ function AtmosphereScene({
 
 export default function App() {
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [dprCap, setDprCap] = useState(1.5);
   const [settled, setSettled] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [entered, setEntered] = useState(false);
@@ -133,11 +176,21 @@ export default function App() {
   const entryTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReducedMotion(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const compact = window.matchMedia("(max-width: 760px), (pointer: coarse)");
+
+    const syncMotion = () => setReducedMotion(motion.matches);
+    const syncQuality = () => setDprCap(compact.matches ? 1.15 : 1.5);
+
+    syncMotion();
+    syncQuality();
+    motion.addEventListener("change", syncMotion);
+    compact.addEventListener("change", syncQuality);
+
+    return () => {
+      motion.removeEventListener("change", syncMotion);
+      compact.removeEventListener("change", syncQuality);
+    };
   }, []);
 
   useEffect(() => {
@@ -187,7 +240,12 @@ export default function App() {
       className={`intro-lab${reducedMotion ? " reduced-motion" : ""}${settled ? " intro-settled" : ""}${transitioning ? " enter-transition" : ""}${entered ? " entered" : ""}`}
     >
       <div className="canvas-wrap" aria-hidden="true" key={sceneVersion}>
-        <AtmosphereScene reducedMotion={reducedMotion} settled={settled} transitioning={transitioning} />
+        <AtmosphereScene
+          reducedMotion={reducedMotion}
+          settled={settled}
+          transitioning={transitioning}
+          dprCap={dprCap}
+        />
       </div>
       <div className="soft-glow glow-a" aria-hidden="true" />
       <div className="soft-glow glow-b" aria-hidden="true" />
@@ -217,10 +275,10 @@ export default function App() {
         <p>Mueve el cursor sobre el mundo</p>
       </div>
 
-      <div className="phase-chip" aria-hidden="true">FASE 7 · TRANSICIÓN</div>
+      <div className="phase-chip" aria-hidden="true">FASE 9 · POLISH</div>
       <div className="corner-note" aria-hidden="true">
         <span className="dot" />
-        {transitioning ? "ATRAVESANDO EL MUNDO" : settled ? "MUNDO VIVO · LISTO PARA ENTRAR" : "AVIÓN · ÓRBITA · IDENTIDAD"}
+        {transitioning ? "ATRAVESANDO EL MUNDO" : settled ? "MUNDO VIVO · LISTO PARA ENTRAR" : "VIAJE · ÓRBITA · IDENTIDAD"}
       </div>
 
       <div className="transition-glass" aria-hidden="true" />
