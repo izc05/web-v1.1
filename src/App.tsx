@@ -20,16 +20,8 @@ function PearlCloudCluster({ seed, position, scale, opacity }: CloudClusterProps
     };
 
     return Array.from({ length: 9 }, (_, index) => ({
-      position: [
-        (random() - 0.5) * 2.75,
-        (random() - 0.5) * 0.9,
-        (random() - 0.5) * 1.15,
-      ] as [number, number, number],
-      scale: [
-        0.78 + random() * 0.9,
-        0.48 + random() * 0.5,
-        0.62 + random() * 0.66,
-      ] as [number, number, number],
+      position: [(random() - 0.5) * 2.75, (random() - 0.5) * 0.9, (random() - 0.5) * 1.15] as [number, number, number],
+      scale: [0.78 + random() * 0.9, 0.48 + random() * 0.5, 0.62 + random() * 0.66] as [number, number, number],
       color: index % 3 === 0 ? "#f8dce8" : index % 4 === 0 ? "#fff0f6" : "#ffffff",
       opacity: opacity * (0.72 + random() * 0.28),
     }));
@@ -40,16 +32,7 @@ function PearlCloudCluster({ seed, position, scale, opacity }: CloudClusterProps
       {puffs.map((puff, index) => (
         <mesh key={index} position={puff.position} scale={puff.scale}>
           <sphereGeometry args={[1, 18, 14]} />
-          <meshStandardMaterial
-            color={puff.color}
-            emissive="#fff7fb"
-            emissiveIntensity={0.12}
-            roughness={0.94}
-            metalness={0}
-            transparent
-            opacity={puff.opacity}
-            depthWrite={false}
-          />
+          <meshStandardMaterial color={puff.color} emissive="#fff7fb" emissiveIntensity={0.12} roughness={0.94} metalness={0} transparent opacity={puff.opacity} depthWrite={false} />
         </mesh>
       ))}
     </group>
@@ -61,20 +44,13 @@ function PearlCloudField({ reducedMotion }: { reducedMotion: boolean }) {
 
   useFrame((state, delta) => {
     if (!group.current) return;
-
     const targetX = reducedMotion ? 0 : state.pointer.x * -0.48;
     const targetY = reducedMotion ? 0 : state.pointer.y * -0.3;
     const targetZ = reducedMotion ? 0 : Math.sin(state.clock.elapsedTime * 0.22) * 0.14;
-
     group.current.position.x = THREE.MathUtils.damp(group.current.position.x, targetX, 2.4, delta);
     group.current.position.y = THREE.MathUtils.damp(group.current.position.y, targetY, 2.4, delta);
     group.current.position.z = THREE.MathUtils.damp(group.current.position.z, targetZ, 1.8, delta);
-    group.current.rotation.y = THREE.MathUtils.damp(
-      group.current.rotation.y,
-      reducedMotion ? 0 : state.pointer.x * 0.016,
-      2.2,
-      delta,
-    );
+    group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, reducedMotion ? 0 : state.pointer.x * 0.016, 2.2, delta);
   });
 
   return (
@@ -91,20 +67,14 @@ function PearlCloudField({ reducedMotion }: { reducedMotion: boolean }) {
 
 function AtmosphereScene({ reducedMotion }: { reducedMotion: boolean }) {
   return (
-    <Canvas
-      dpr={[1, 1.5]}
-      camera={{ position: [0, 0, 8.5], fov: 46, near: 0.1, far: 60 }}
-      gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
-    >
+    <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 8.5], fov: 46, near: 0.1, far: 60 }} gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}>
       <color attach="background" args={["#fffafc"]} />
       <fog attach="fog" args={["#fff7fb", 9, 30]} />
-
       <ambientLight intensity={2.1} />
       <hemisphereLight args={["#ffffff", "#f2b3cf", 1.55]} />
       <directionalLight position={[4, 8, 7]} intensity={2.4} color="#ffffff" />
       <pointLight position={[-5, 2, 5]} intensity={25} color="#f7c3dc" distance={18} />
       <pointLight position={[6, -2, 3]} intensity={18} color="#e869a6" distance={16} />
-
       <PearlCloudField reducedMotion={reducedMotion} />
       <GlobeScene reducedMotion={reducedMotion} />
       <FlightScene reducedMotion={reducedMotion} />
@@ -124,29 +94,21 @@ export default function App() {
   }, []);
 
   return (
-    <main className="intro-lab">
+    <main className={`intro-lab${reducedMotion ? " reduced-motion" : ""}`}>
       <div className="canvas-wrap" aria-hidden="true">
         <AtmosphereScene reducedMotion={reducedMotion} />
       </div>
-
       <div className="soft-glow glow-a" aria-hidden="true" />
       <div className="soft-glow glow-b" aria-hidden="true" />
 
-      <section className="lab-panel" aria-label="Estado del laboratorio 3D">
-        <p className="phase">FASE 4 · CRYSTAL</p>
-        <p className="phase-title">Globo de cristal perla</p>
-        <p className="phase-copy">Refracción, volumen interior y reflejos rosa-magenta convierten el planeta en la pieza protagonista, dentro de un cielo 3D completamente autocontenido.</p>
+      <section className="brand-lockup" aria-label="Language School Rocío Ruiz">
+        <span className="brand-language">LANGUAGE</span>
+        <strong className="brand-school">School</strong>
+        <span className="brand-rocio">ROCÍO RUIZ</span>
       </section>
 
-      <div className="corner-note" aria-hidden="true">
-        <span className="dot" />
-        MUEVE EL CURSOR · CRYSTAL GLOBE · VIAJE EN LOOP
-      </div>
-
-      <div className="brand-whisper crystal-whisper" aria-hidden="true">
-        <span>LANGUAGE</span>
-        <strong>CRYSTAL WORLD</strong>
-      </div>
+      <div className="phase-chip" aria-hidden="true">FASE 5 · IDENTIDAD</div>
+      <div className="corner-note" aria-hidden="true"><span className="dot" />AVIÓN · ÓRBITA · IDENTIDAD</div>
     </main>
   );
 }
