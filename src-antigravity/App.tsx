@@ -135,7 +135,7 @@ export default function App() {
 
         <Airplane progressRef={planeProgress} />
 
-        <Environment preset="city" />
+        <Environment preset="studio" />
         <Preload all />
       </Canvas>
 

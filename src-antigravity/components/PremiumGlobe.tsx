@@ -68,36 +68,35 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
         <sphereGeometry args={[1.5, 64, 64]} />
         <MeshTransmissionMaterial
           backside
-          backsideThickness={0.5}
-          thickness={0.8}
+          backsideThickness={0.2}
+          thickness={0.5}
           color="#ffffff"
-          roughness={0.02}
-          chromaticAberration={0.04}
-          anisotropicBlur={0.1}
+          roughness={0.05}
+          chromaticAberration={0.02}
+          anisotropicBlur={0.05}
           clearcoat={1}
           clearcoatRoughness={0.05}
-          envMapIntensity={1.5}
+          envMapIntensity={1.0}
           resolution={512}
         />
       </mesh>
 
       {/* Inner Core (The Earth Model) */}
-      {/* Tilted for axial realism, and rotated Y to show London initially at +Z */}
-      <mesh scale={1.42} rotation={[0.4, Math.PI / 1.1, 0]}>
+      {/* Math.PI rotates perfectly so London (lon 0) is at +Z facing camera */}
+      <mesh scale={1.42} rotation={[0.4, Math.PI, 0]}>
         <sphereGeometry args={[1, 64, 64]} />
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           map={earthMap}
-          color="#ffd6e8"
-          emissive={MAGENTA}
-          emissiveIntensity={0.05}
-          roughness={0.4}
-          metalness={0.1}
-          clearcoat={0.5}
+          color="#ffffff"
+          emissive="#ffffff"
+          emissiveMap={earthMap}
+          emissiveIntensity={0.2}
+          roughness={0.8}
         />
       </mesh>
 
-      {/* Inner lighting */}
-      <pointLight position={[0, 0, 0]} color={MAGENTA} intensity={2} distance={3} />
+      {/* Inner lighting to pop the earth */}
+      <pointLight position={[0, 0, 1]} color="#ffffff" intensity={3} distance={5} />
     </group>
   );
 }
