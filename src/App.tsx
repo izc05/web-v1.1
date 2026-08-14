@@ -2,6 +2,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Cloud, Clouds } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import FlightScene from "./FlightScene";
 
 function PearlCloudField({ reducedMotion }: { reducedMotion: boolean }) {
   const group = useRef<THREE.Group>(null);
@@ -117,6 +118,7 @@ function AtmosphereScene({ reducedMotion }: { reducedMotion: boolean }) {
       <pointLight position={[6, -2, 3]} intensity={20} color="#e869a6" distance={16} />
 
       <PearlCloudField reducedMotion={reducedMotion} />
+      <FlightScene reducedMotion={reducedMotion} />
     </Canvas>
   );
 }
@@ -142,18 +144,20 @@ export default function App() {
       <div className="soft-glow glow-b" aria-hidden="true" />
 
       <section className="lab-panel" aria-label="Estado del laboratorio 3D">
-        <p className="phase">FASE 1 · ATMÓSFERA</p>
-        <p className="phase-title">Cielo perla</p>
-        <p className="phase-copy">Un corredor limpio entre nubes suaves, preparado para recibir el avión.</p>
+        <p className="phase">FASE 2 · VIAJE</p>
+        <p className="phase-title">Avión rosa</p>
+        <p className="phase-copy">El símbolo de viaje entra cerca de cámara, atraviesa el cielo perla y se dirige al punto donde aparecerá el globo.</p>
       </section>
 
       <div className="corner-note" aria-hidden="true">
         <span className="dot" />
-        MUEVE EL CURSOR · PROFUNDIDAD SUAVE
+        RECORRIDO 3D · 7.2 S · LOOP DE LABORATORIO
       </div>
 
-      <div className="center-guide" aria-hidden="true">
-        <span />
+      <div className="destination-marker" aria-hidden="true">
+        <span className="destination-ring" />
+        <span className="destination-dot" />
+        <small>PRÓXIMO · GLOBO 3D</small>
       </div>
     </main>
   );
