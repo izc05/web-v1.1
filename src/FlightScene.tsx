@@ -2,7 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-const CYCLE_SECONDS = 8.5;
+const INTRO_SECONDS = 7.6;
 const APPROACH_END = 0.47;
 const ORBIT_END = 0.84;
 const GLOBE_CENTER = new THREE.Vector3(0.35, 0.08, -1.45);
@@ -14,33 +14,28 @@ function BrandPlane() {
         <sphereGeometry args={[1, 28, 28]} />
         <meshPhysicalMaterial color="#d62974" roughness={0.18} clearcoat={1} clearcoatRoughness={0.06} />
       </mesh>
-
       <mesh position={[0, 0, -0.92]} rotation={[-Math.PI / 2, 0, 0]}>
         <coneGeometry args={[0.16, 0.42, 28]} />
         <meshPhysicalMaterial color="#d62974" roughness={0.16} clearcoat={1} />
       </mesh>
-
       <mesh position={[0, -0.01, -0.02]} rotation={[0, 0, -0.025]}>
         <boxGeometry args={[1.52, 0.045, 0.36]} />
         <meshPhysicalMaterial color="#f4a7c8" roughness={0.17} clearcoat={1} />
       </mesh>
-
       <mesh position={[0, 0.01, 0.6]}>
         <boxGeometry args={[0.68, 0.04, 0.22]} />
         <meshStandardMaterial color="#cc1f67" roughness={0.22} />
       </mesh>
-
       <mesh position={[0, 0.18, 0.69]} rotation={[0.08, 0, 0]}>
         <boxGeometry args={[0.04, 0.36, 0.22]} />
         <meshStandardMaterial color="#cc1f67" roughness={0.22} />
       </mesh>
-
       <pointLight position={[0, 0, 0.22]} intensity={4.8} distance={2.8} color="#ef7caf" />
     </group>
   );
 }
 
-export default function FlightScene({ reducedMotion }: { reducedMotion: boolean }) {
+export default function FlightScene({ reducedMotion, settled }: { reducedMotion: boolean; settled: boolean }) {
   const plane = useRef<THREE.Group>(null);
   const orientation = useMemo(() => new THREE.Quaternion(), []);
   const bank = useMemo(() => new THREE.Quaternion(), []);
@@ -72,13 +67,11 @@ export default function FlightScene({ reducedMotion }: { reducedMotion: boolean 
     for (let i = 0; i <= 120; i += 1) {
       const t = i / 120;
       const angle = 0.15 + t * Math.PI * 2;
-      points.push(
-        new THREE.Vector3(
-          GLOBE_CENTER.x + Math.cos(angle) * 2.02,
-          GLOBE_CENTER.y + 0.34 + Math.sin(angle * 1.2) * 0.38,
-          GLOBE_CENTER.z + Math.sin(angle) * 1.5,
-        ),
-      );
+      points.push(new THREE.Vector3(
+        GLOBE_CENTER.x + Math.cos(angle) * 2.02,
+        GLOBE_CENTER.y + 0.34 + Math.sin(angle * 1.2) * 0.38,
+        GLOBE_CENTER.z + Math.sin(angle) * 1.5,
+      ));
     }
     points.push(new THREE.Vector3(1.95, 1.35, -0.92));
     points.push(new THREE.Vector3(1.72, 1.52, -0.72));
@@ -92,30 +85,20 @@ export default function FlightScene({ reducedMotion }: { reducedMotion: boolean 
   }, [pathPoints]);
 
   const trailMaterial = useMemo(
-    () =>
-      new THREE.LineBasicMaterial({
-        color: "#d62974",
-        transparent: true,
-        opacity: 0.16,
-        depthWrite: false,
-      }),
+    () => new THREE.LineBasicMaterial({ color: "#d62974", transparent: true, opacity: 0.16, depthWrite: false }),
     [],
   );
-
   const trail = useMemo(() => new THREE.Line(trailGeometry, trailMaterial), [trailGeometry, trailMaterial]);
 
-  useEffect(
-    () => () => {
-      trailGeometry.dispose();
-      trailMaterial.dispose();
-    },
-    [trailGeometry, trailMaterial],
-  );
+  useEffect(() => () => {
+    trailGeometry.dispose();
+    trailMaterial.dispose();
+  }, [trailGeometry, trailMaterial]);
 
   useFrame((state, delta) => {
     if (!plane.current) return;
 
-    const cycle = reducedMotion ? 0.93 : (state.clock.elapsedTime % CYCLE_SECONDS) / CYCLE_SECONDS;
+    const cycle = reducedMotion || settled ? 0.985 : Math.min(state.clock.elapsedTime / INTRO_SECONDS, 0.985);
     let progress = 0;
     let bankAmount = 0;
 
@@ -153,25 +136,22 @@ export default function FlightScene({ reducedMotion }: { reducedMotion: boolean 
     orientation.setFromUnitVectors(forward, tangent);
     bank.setFromAxisAngle(tangent, reducedMotion ? 0 : bankAmount);
     orientation.multiply(bank);
-
     plane.current.position.copy(point);
     plane.current.quaternion.slerp(orientation, 1 - Math.exp(-delta * 10));
 
     const nearCamera = THREE.MathUtils.clamp((point.z + 3.5) / 9, 0, 1);
     plane.current.scale.setScalar(0.7 + nearCamera * 0.18);
-    plane.current.visible = cycle < 0.985;
+    plane.current.visible = true;
 
-    trail.visible = cycle < 0.985;
+    trail.visible = !settled && !reducedMotion;
     trail.geometry.setDrawRange(0, Math.max(2, Math.floor(progress * pathPoints.length)));
-    trailMaterial.opacity = reducedMotion ? 0.08 : 0.07 + Math.sin(Math.min(progress, 1) * Math.PI) * 0.16;
+    trailMaterial.opacity = 0.07 + Math.sin(Math.min(progress, 1) * Math.PI) * 0.16;
   });
 
   return (
     <group>
       <primitive object={trail} />
-      <group ref={plane}>
-        <BrandPlane />
-      </group>
+      <group ref={plane}><BrandPlane /></group>
     </group>
   );
 }
