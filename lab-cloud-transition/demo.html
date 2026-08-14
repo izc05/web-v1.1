@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloud Transition Demo — Language School Rocío Ruiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playball&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --magenta: #d62974;
+        --magenta-light: #f4a7c8;
+        --pearl: #fffcfd;
+      }
+
+      body {
+        background: var(--pearl);
+        font-family: 'Montserrat', sans-serif;
+        color: #333;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 60px;
+        overflow: hidden;
+      }
+
+      /* ── Floating bg circles ── */
+      body::before, body::after {
+        content: '';
+        position: fixed;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--magenta-light), transparent 70%);
+        opacity: 0.25;
+        pointer-events: none;
+        animation: drift 8s ease-in-out infinite alternate;
+      }
+      body::before { width: 500px; height: 500px; top: -150px; right: -100px; }
+      body::after  { width: 400px; height: 400px; bottom: -120px; left: -80px; animation-delay: -4s; }
+      @keyframes drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(30px, 20px) scale(1.1); } }
+
+      /* ── Header ── */
+      .logo {
+        text-align: center;
+        user-select: none;
+      }
+      .logo-language {
+        font-size: 0.85rem;
+        letter-spacing: 0.4em;
+        font-weight: 600;
+        color: #888;
+        display: block;
+        margin-bottom: -6px;
+      }
+      .logo-school {
+        font-family: 'Playball', cursive;
+        font-size: 4rem;
+        color: var(--magenta);
+        line-height: 1;
+        display: block;
+      }
+      .logo-rocio {
+        font-size: 0.75rem;
+        letter-spacing: 0.4em;
+        color: #aaa;
+        display: block;
+        margin-top: 4px;
+      }
+
+      /* ── Demo card ── */
+      .card {
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(212,41,116,0.12);
+        border-radius: 24px;
+        padding: 48px 56px;
+        text-align: center;
+        box-shadow: 0 8px 48px rgba(214,41,116,0.08);
+        max-width: 480px;
+        width: 90%;
+      }
+
+      .card h2 {
+        font-size: 0.7rem;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: var(--magenta);
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+
+      .card p {
+        font-size: 0.95rem;
+        color: #888;
+        line-height: 1.7;
+        margin-bottom: 36px;
+        font-weight: 300;
+      }
+
+      .links {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      /* ── Pill links ── */
+      .link-pill {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 22px;
+        border-radius: 50px;
+        border: 1.5px solid rgba(214,41,116,0.2);
+        text-decoration: none;
+        color: #555;
+        font-size: 0.85rem;
+        letter-spacing: 0.06em;
+        font-weight: 600;
+        transition: border-color 0.25s, background 0.25s, color 0.25s, transform 0.25s;
+        cursor: pointer;
+        background: rgba(255,255,255,0.6);
+        position: relative;
+        overflow: hidden;
+      }
+      .link-pill::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, var(--magenta), var(--magenta-light));
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 0;
+      }
+      .link-pill:hover {
+        border-color: var(--magenta);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(214,41,116,0.25);
+      }
+      .link-pill:hover::before { opacity: 1; }
+      .link-pill span { position: relative; z-index: 1; }
+      .link-pill .arrow {
+        position: relative;
+        z-index: 1;
+        font-size: 1rem;
+        transition: transform 0.25s;
+      }
+      .link-pill:hover .arrow { transform: translateX(4px); }
+
+      /* ── Info badge ── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(214,41,116,0.08);
+        border-radius: 50px;
+        padding: 8px 18px;
+        font-size: 0.72rem;
+        color: var(--magenta);
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        margin-top: 36px;
+      }
+      .badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--magenta);
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.7); }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Logo -->
+    <div class="logo">
+      <span class="logo-language">LANGUAGE</span>
+      <span class="logo-school">School</span>
+      <span class="logo-rocio">ROCÍO RUIZ</span>
+    </div>
+
+    <!-- Demo card -->
+    <div class="card">
+      <h2>☁️ Cloud Transition</h2>
+      <p>
+        Haz clic en cualquier enlace para ver el efecto de transición de página.<br>
+        Nubes rosas volarán atravesando la pantalla antes de navegar.
+      </p>
+      <nav class="links" aria-label="Demo links">
+        <a class="link-pill" href="./demo.html">
+          <span>☁️ Recarga esta demo</span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="link-pill" href="../antigravity.html">
+          <span>🌍 Intro 3D · Antigravity</span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="link-pill" href="../index.html">
+          <span>🏠 Ir a la Home</span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="link-pill" href="../lab-intro-3d/index.html">
+          <span>🛸 Lab Intro 3D</span>
+          <span class="arrow">→</span>
+        </a>
+      </nav>
+
+      <div class="badge">
+        <div class="badge-dot"></div>
+        EFECTO ACTIVO · STANDALONE
+      </div>
+    </div>
+
+    <!-- 🔑 Drop this ONE line into any page to enable the effect -->
+    <script type="module" src="./cloud-transition.js"></script>
+  </body>
+</html>
