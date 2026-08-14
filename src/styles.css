@@ -43,8 +43,8 @@ body {
   z-index: 1;
   inset: 0;
   background:
-    radial-gradient(circle at 52% 48%, transparent 0 24%, rgba(255, 250, 252, 0.06) 48%, rgba(247, 216, 231, 0.13) 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 246, 250, 0.06));
+    radial-gradient(circle at 52% 48%, transparent 0 21%, rgba(255, 250, 252, 0.045) 44%, rgba(247, 216, 231, 0.13) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 246, 250, 0.055));
   content: "";
   pointer-events: none;
 }
@@ -82,7 +82,7 @@ body {
   padding: 1rem 1.15rem 1.05rem;
   border: 1px solid rgba(214, 41, 116, 0.09);
   border-radius: 1.15rem;
-  background: rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.5);
   box-shadow: 0 22px 70px rgba(126, 70, 98, 0.08);
   backdrop-filter: blur(14px);
   pointer-events: none;
@@ -162,6 +162,14 @@ body {
   font-size: 0.92rem;
   font-weight: 500;
   letter-spacing: 0.18em;
+}
+
+.crystal-whisper::before {
+  width: 7.5rem;
+  height: 1px;
+  margin-bottom: 0.65rem;
+  background: linear-gradient(90deg, transparent, rgba(214, 41, 116, 0.32), transparent);
+  content: "";
 }
 
 @media (max-width: 760px) {

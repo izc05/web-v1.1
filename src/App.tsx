@@ -52,11 +52,11 @@ function AtmosphereScene({ reducedMotion }: { reducedMotion: boolean }) {
       <color attach="background" args={["#fffafc"]} />
       <fog attach="fog" args={["#fff7fb", 9, 30]} />
 
-      <ambientLight intensity={2.4} />
-      <hemisphereLight args={["#ffffff", "#f2b3cf", 1.7]} />
-      <directionalLight position={[4, 8, 7]} intensity={2.7} color="#ffffff" />
-      <pointLight position={[-5, 2, 5]} intensity={28} color="#f7c3dc" distance={18} />
-      <pointLight position={[6, -2, 3]} intensity={20} color="#e869a6" distance={16} />
+      <ambientLight intensity={2.1} />
+      <hemisphereLight args={["#ffffff", "#f2b3cf", 1.55]} />
+      <directionalLight position={[4, 8, 7]} intensity={2.4} color="#ffffff" />
+      <pointLight position={[-5, 2, 5]} intensity={25} color="#f7c3dc" distance={18} />
+      <pointLight position={[6, -2, 3]} intensity={18} color="#e869a6" distance={16} />
 
       <PearlCloudField reducedMotion={reducedMotion} />
       <GlobeScene reducedMotion={reducedMotion} />
@@ -86,19 +86,19 @@ export default function App() {
       <div className="soft-glow glow-b" aria-hidden="true" />
 
       <section className="lab-panel" aria-label="Estado del laboratorio 3D">
-        <p className="phase">FASE 3 · DESCUBRIMIENTO</p>
-        <p className="phase-title">Globo 3D vivo</p>
-        <p className="phase-copy">El avión abre el recorrido y descubre un planeta perla con líneas magenta, deformación orgánica mínima y respuesta suave al cursor.</p>
+        <p className="phase">FASE 4 · CRYSTAL</p>
+        <p className="phase-title">Globo de cristal perla</p>
+        <p className="phase-copy">Refracción, volumen interior, reflejos rosa-magenta y cáusticas muy contenidas convierten el planeta en la pieza protagonista.</p>
       </section>
 
       <div className="corner-note" aria-hidden="true">
         <span className="dot" />
-        MUEVE EL CURSOR · GLOBO VIVO · VIAJE EN LOOP
+        MUEVE EL CURSOR · CRYSTAL GLOBE · VIAJE EN LOOP
       </div>
 
-      <div className="brand-whisper" aria-hidden="true">
+      <div className="brand-whisper crystal-whisper" aria-hidden="true">
         <span>LANGUAGE</span>
-        <strong>WORLD</strong>
+        <strong>CRYSTAL WORLD</strong>
       </div>
     </main>
   );
