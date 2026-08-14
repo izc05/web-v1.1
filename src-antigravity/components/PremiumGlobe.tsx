@@ -23,7 +23,7 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
     if (!groupRef.current || !coreRef.current || !haloRef.current) return;
 
     // Gentle rotation
-    groupRef.current.rotation.y += delta * 0.05;
+    groupRef.current.rotation.y += delta * 0.015;
     
     // Parallax on hover
     if (introComplete) {
@@ -56,7 +56,7 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
       {/* Latitudes / Meridians (Wireframe illusion) */}
       <mesh>
         <sphereGeometry args={[1.52, 32, 32]} />
-        <meshBasicMaterial color={MAGENTA} wireframe transparent opacity={0.04} />
+        <meshBasicMaterial color={MAGENTA} wireframe transparent opacity={0.015} />
       </mesh>
 
       {/* Main Glass Body - Transparent shell */}
@@ -82,7 +82,8 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
       </mesh>
 
       {/* Inner Core (The Earth Model) */}
-      <mesh scale={1.42} rotation={[0, -Math.PI / 2, 0]}>
+      {/* Tilted for axial realism, and rotated Y to show London initially at +Z */}
+      <mesh scale={1.42} rotation={[0.4, Math.PI / 1.1, 0]}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshPhysicalMaterial
           map={earthMap}

@@ -117,12 +117,6 @@ export default function Airplane({ progressRef }: { progressRef: React.MutableRe
       <mesh geometry={fuselageGeo}>
         <meshPhysicalMaterial color={MAGENTA} clearcoat={1} clearcoatRoughness={0.05} roughness={0.15} metalness={0.2} />
       </mesh>
-      
-      {/* Cockpit Window */}
-      <mesh position={[0, 0.09, -0.75]} rotation={[0.25, 0, 0]}>
-        <boxGeometry args={[0.13, 0.08, 0.1]} />
-        <meshPhysicalMaterial color="#111111" roughness={0.05} metalness={0.9} clearcoat={1} />
-      </mesh>
 
       {/* Wings */}
       <mesh geometry={wingGeo} position={[0, -0.05, 0]}>
@@ -130,14 +124,6 @@ export default function Airplane({ progressRef }: { progressRef: React.MutableRe
       </mesh>
       <mesh geometry={wingGeo} position={[0, -0.05, 0]} scale={[-1, 1, 1]}>
         <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.15} />
-      </mesh>
-
-      {/* Engines */}
-      <mesh geometry={engineGeo} position={[0.45, -0.12, 0.1]}>
-        <meshPhysicalMaterial color="#e0e0e0" metalness={0.6} roughness={0.2} />
-      </mesh>
-      <mesh geometry={engineGeo} position={[-0.45, -0.12, 0.1]}>
-        <meshPhysicalMaterial color="#e0e0e0" metalness={0.6} roughness={0.2} />
       </mesh>
 
       {/* Vertical Tail */}
