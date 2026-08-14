@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -24,84 +24,138 @@ export default function Airplane({ progressRef }: { progressRef: React.MutableRe
   // Helpers for path calculation
   const point = useRef(new THREE.Vector3());
   const tangent = useRef(new THREE.Vector3());
-  const axis = useRef(new THREE.Vector3());
   const up = useRef(new THREE.Vector3(0, 1, 0));
+
+  // 1. Aerodynamic Fuselage
+  const fuselageGeo = useMemo(() => {
+    const points = [];
+    for (let i = 0; i <= 40; i++) {
+      const x = i / 40; // 0 (tail) to 1 (nose)
+      let r = 0.12; 
+      if (x < 0.25) {
+        // Tail taper
+        const t = x / 0.25;
+        r = 0.12 * (0.15 + 0.85 * t); // from 0.018 to 0.12
+      } else if (x > 0.8) {
+        // Nose curve
+        const t = (x - 0.8) / 0.2;
+        r = 0.12 * Math.cos(t * Math.PI / 2); // from 0.12 down to 0
+      }
+      // Y axis is length. (0.5 - x) * 1.8 goes from 0.9 (tail) to -0.9 (nose).
+      points.push(new THREE.Vector2(r, (0.5 - x) * 1.8)); 
+    }
+    const geo = new THREE.LatheGeometry(points, 32);
+    // Rotate so length goes along Z
+    geo.rotateX(Math.PI / 2); 
+    return geo;
+  }, []);
+
+  // 2. Swept-back Wings
+  const wingGeo = useMemo(() => {
+    const shape = new THREE.Shape();
+    shape.moveTo(0, -0.25); // Root leading edge
+    shape.lineTo(1.4, 0.3); // Tip leading edge
+    shape.lineTo(1.4, 0.55); // Tip trailing edge
+    shape.lineTo(0, 0.3); // Root trailing edge
+    shape.lineTo(0, -0.25);
+
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.025, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.015, bevelThickness: 0.01
+    });
+    // Flatten onto XZ plane
+    geo.rotateX(Math.PI / 2); 
+    return geo;
+  }, []);
+
+  // 3. Vertical Stabilizer (Tail)
+  const tailGeo = useMemo(() => {
+    const shape = new THREE.Shape();
+    shape.moveTo(0.65, 0); // root leading
+    shape.lineTo(0.9, 0.35); // tip leading
+    shape.lineTo(1.05, 0.35); // tip trailing
+    shape.lineTo(0.95, 0); // root trailing
+    shape.lineTo(0.65, 0);
+
+    const geo = new THREE.ExtrudeGeometry(shape, { 
+      depth: 0.02, bevelEnabled: true, bevelSegments: 1, bevelSize: 0.005, bevelThickness: 0.005 
+    });
+    // Rotate to YZ plane
+    geo.rotateY(Math.PI / 2);
+    return geo;
+  }, []);
+
+  // 4. Jet Engines
+  const engineGeo = useMemo(() => {
+    const geo = new THREE.CylinderGeometry(0.065, 0.05, 0.32, 24);
+    geo.rotateX(Math.PI / 2); // Length along Z
+    return geo;
+  }, []);
 
   useFrame(() => {
     if (!groupRef.current) return;
     
-    // Progress goes from 0 to 1
     const t = Math.max(0, Math.min(progressRef.current, 0.999));
-    
-    // Position
     flightPath.getPointAt(t, point.current);
     groupRef.current.position.copy(point.current);
-    
-    // Rotation (look at path)
     flightPath.getTangentAt(t, tangent.current);
     
-    // Bank angle (roll)
-    const bankAmount = Math.sin(t * Math.PI * 4) * 0.3;
+    const bankAmount = Math.sin(t * Math.PI * 4) * 0.35;
     
-    // Construct orientation matrix
     const matrix = new THREE.Matrix4();
     up.current.set(0, 1, 0).applyAxisAngle(tangent.current, bankAmount);
     matrix.lookAt(point.current, point.current.clone().add(tangent.current), up.current);
     groupRef.current.quaternion.setFromRotationMatrix(matrix);
     
-    // Scale: plane appears smaller as it goes further
-    const scale = 0.6 + (1 - t) * 0.4;
+    const scale = 0.6 + (1 - t) * 0.5;
     groupRef.current.scale.setScalar(scale);
-    
-    // Hide when finished
     groupRef.current.visible = t < 0.99;
   });
 
   return (
     <group ref={groupRef}>
-      {/* Main Fuselage */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <capsuleGeometry args={[0.15, 0.9, 32, 32]} />
-        <meshPhysicalMaterial color={MAGENTA} clearcoat={1} clearcoatRoughness={0.05} roughness={0.1} metalness={0.1} />
+      {/* Fuselage */}
+      <mesh geometry={fuselageGeo}>
+        <meshPhysicalMaterial color={MAGENTA} clearcoat={1} clearcoatRoughness={0.05} roughness={0.15} metalness={0.2} />
       </mesh>
       
       {/* Cockpit Window */}
-      <mesh position={[0, 0.12, 0.3]} rotation={[0.4, 0, 0]}>
-        <boxGeometry args={[0.14, 0.08, 0.15]} />
-        <meshPhysicalMaterial color="#222222" roughness={0} metalness={0.8} clearcoat={1} />
+      <mesh position={[0, 0.09, -0.75]} rotation={[0.25, 0, 0]}>
+        <boxGeometry args={[0.13, 0.08, 0.1]} />
+        <meshPhysicalMaterial color="#111111" roughness={0.05} metalness={0.9} clearcoat={1} />
       </mesh>
-      
-      {/* Main Wings */}
-      <mesh position={[0, -0.02, 0.1]} rotation={[0, 0, 0]}>
-        <boxGeometry args={[1.4, 0.03, 0.3]} />
-        <meshPhysicalMaterial color="#ffffff" clearcoat={1} clearcoatRoughness={0.05} roughness={0.1} />
+
+      {/* Wings */}
+      <mesh geometry={wingGeo} position={[0, -0.05, 0]}>
+        <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.15} />
+      </mesh>
+      <mesh geometry={wingGeo} position={[0, -0.05, 0]} scale={[-1, 1, 1]}>
+        <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.15} />
       </mesh>
 
       {/* Engines */}
-      <mesh position={[-0.35, -0.08, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.25, 16]} />
-        <meshPhysicalMaterial color="#dddddd" metalness={0.5} roughness={0.2} />
+      <mesh geometry={engineGeo} position={[0.45, -0.12, 0.1]}>
+        <meshPhysicalMaterial color="#e0e0e0" metalness={0.6} roughness={0.2} />
       </mesh>
-      <mesh position={[0.35, -0.08, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.25, 16]} />
-        <meshPhysicalMaterial color="#dddddd" metalness={0.5} roughness={0.2} />
+      <mesh geometry={engineGeo} position={[-0.45, -0.12, 0.1]}>
+        <meshPhysicalMaterial color="#e0e0e0" metalness={0.6} roughness={0.2} />
       </mesh>
-      
-      {/* Tail (Vertical Stabilizer) */}
-      <mesh position={[0, 0.15, -0.35]} rotation={[0.2, 0, 0]}>
-        <boxGeometry args={[0.03, 0.3, 0.15]} />
+
+      {/* Vertical Tail */}
+      <mesh geometry={tailGeo} position={[0, 0.08, -0.05]}>
         <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.1} />
       </mesh>
-      
-      {/* Horizontal Stabilizers */}
-      <mesh position={[0, 0.02, -0.38]}>
-        <boxGeometry args={[0.5, 0.03, 0.15]} />
+
+      {/* Horizontal Stabilizers (reusing wing geometry, scaled and shifted) */}
+      <mesh geometry={wingGeo} position={[0, 0.02, 0.8]} scale={[0.3, 0.3, 0.3]}>
         <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.1} />
       </mesh>
-      
-      {/* Lights */}
-      <pointLight position={[-0.7, 0, 0.1]} color="#ff0000" intensity={0.8} distance={1.5} />
-      <pointLight position={[0.7, 0, 0.1]} color="#00ff00" intensity={0.8} distance={1.5} />
+      <mesh geometry={wingGeo} position={[0, 0.02, 0.8]} scale={[-0.3, 0.3, 0.3]}>
+        <meshPhysicalMaterial color="#ffffff" clearcoat={1} roughness={0.1} />
+      </mesh>
+
+      {/* Nav Lights */}
+      <pointLight position={[-1.4, -0.05, 0.2]} color="#ff0000" intensity={1} distance={2} />
+      <pointLight position={[1.4, -0.05, 0.2]} color="#00ff00" intensity={1} distance={2} />
     </group>
   );
 }
