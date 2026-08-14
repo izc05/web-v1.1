@@ -58,18 +58,7 @@ export default function Airplane({ progressRef }: { progressRef: React.MutableRe
     return geo;
   }, []);
 
-  // 3. Sharp Tail (Attached properly)
-  const tailGeo = useMemo(() => {
-    const shape = new THREE.Shape();
-    shape.moveTo(0.55, -0.02); // Start slightly below center to intersect fuselage
-    shape.lineTo(0.65, 0.25); 
-    shape.lineTo(0.75, 0.25); 
-    shape.lineTo(0.7, -0.02); 
-    shape.lineTo(0.55, -0.02);
-    const geo = new THREE.ShapeGeometry(shape);
-    geo.rotateY(Math.PI / 2);
-    return geo;
-  }, []);
+
 
   useFrame(() => {
     if (!groupRef.current) return;
@@ -104,11 +93,6 @@ export default function Airplane({ progressRef }: { progressRef: React.MutableRe
         <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Vertical Tail */}
-      <mesh geometry={tailGeo} position={[0, 0, 0]}>
-        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
-
       {/* Horizontal Stabilizers */}
       <mesh geometry={wingGeo} position={[0, 0, 0.6]} scale={[0.3, 0.3, 0.3]}>
         <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
@@ -116,10 +100,6 @@ export default function Airplane({ progressRef }: { progressRef: React.MutableRe
       <mesh geometry={wingGeo} position={[0, 0, 0.6]} scale={[-0.3, 0.3, 0.3]}>
         <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
-
-      {/* Nav Lights */}
-      <pointLight position={[-1.4, -0.05, 0.2]} color="#ff0000" intensity={1} distance={2} />
-      <pointLight position={[1.4, -0.05, 0.2]} color="#00ff00" intensity={1} distance={2} />
     </group>
   );
 }

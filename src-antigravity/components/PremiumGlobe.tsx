@@ -30,8 +30,8 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
       pointer.current.x = THREE.MathUtils.lerp(pointer.current.x, state.pointer.x, 0.1);
       pointer.current.y = THREE.MathUtils.lerp(pointer.current.y, state.pointer.y, 0.1);
       
-      groupRef.current.rotation.x = pointer.current.y * 0.2;
-      groupRef.current.rotation.z = pointer.current.x * -0.1;
+      groupRef.current.rotation.x = pointer.current.y * 0.6;
+      groupRef.current.rotation.z = pointer.current.x * -0.4;
       
       targetScale.current = hovered ? 1.05 : 1;
       const currentScale = groupRef.current.scale.x;
