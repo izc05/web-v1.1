@@ -4,6 +4,8 @@ import * as THREE from "three";
 import FlightScene from "./FlightScene";
 import GlobeScene from "./GlobeScene";
 
+const INTRO_MS = 7600;
+
 type CloudClusterProps = {
   seed: number;
   position: [number, number, number];
@@ -32,25 +34,35 @@ function PearlCloudCluster({ seed, position, scale, opacity }: CloudClusterProps
       {puffs.map((puff, index) => (
         <mesh key={index} position={puff.position} scale={puff.scale}>
           <sphereGeometry args={[1, 18, 14]} />
-          <meshStandardMaterial color={puff.color} emissive="#fff7fb" emissiveIntensity={0.12} roughness={0.94} metalness={0} transparent opacity={puff.opacity} depthWrite={false} />
+          <meshStandardMaterial
+            color={puff.color}
+            emissive="#fff7fb"
+            emissiveIntensity={0.12}
+            roughness={0.94}
+            metalness={0}
+            transparent
+            opacity={puff.opacity}
+            depthWrite={false}
+          />
         </mesh>
       ))}
     </group>
   );
 }
 
-function PearlCloudField({ reducedMotion }: { reducedMotion: boolean }) {
+function PearlCloudField({ reducedMotion, settled }: { reducedMotion: boolean; settled: boolean }) {
   const group = useRef<THREE.Group>(null);
 
   useFrame((state, delta) => {
     if (!group.current) return;
-    const targetX = reducedMotion ? 0 : state.pointer.x * -0.48;
-    const targetY = reducedMotion ? 0 : state.pointer.y * -0.3;
+    const interaction = settled && !reducedMotion ? 1 : 0.35;
+    const targetX = state.pointer.x * -0.48 * interaction;
+    const targetY = state.pointer.y * -0.3 * interaction;
     const targetZ = reducedMotion ? 0 : Math.sin(state.clock.elapsedTime * 0.22) * 0.14;
     group.current.position.x = THREE.MathUtils.damp(group.current.position.x, targetX, 2.4, delta);
     group.current.position.y = THREE.MathUtils.damp(group.current.position.y, targetY, 2.4, delta);
     group.current.position.z = THREE.MathUtils.damp(group.current.position.z, targetZ, 1.8, delta);
-    group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, reducedMotion ? 0 : state.pointer.x * 0.016, 2.2, delta);
+    group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, state.pointer.x * 0.016 * interaction, 2.2, delta);
   });
 
   return (
@@ -65,9 +77,13 @@ function PearlCloudField({ reducedMotion }: { reducedMotion: boolean }) {
   );
 }
 
-function AtmosphereScene({ reducedMotion }: { reducedMotion: boolean }) {
+function AtmosphereScene({ reducedMotion, settled }: { reducedMotion: boolean; settled: boolean }) {
   return (
-    <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 8.5], fov: 46, near: 0.1, far: 60 }} gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}>
+    <Canvas
+      dpr={[1, 1.5]}
+      camera={{ position: [0, 0, 8.5], fov: 46, near: 0.1, far: 60 }}
+      gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
+    >
       <color attach="background" args={["#fffafc"]} />
       <fog attach="fog" args={["#fff7fb", 9, 30]} />
       <ambientLight intensity={2.1} />
@@ -75,15 +91,17 @@ function AtmosphereScene({ reducedMotion }: { reducedMotion: boolean }) {
       <directionalLight position={[4, 8, 7]} intensity={2.4} color="#ffffff" />
       <pointLight position={[-5, 2, 5]} intensity={25} color="#f7c3dc" distance={18} />
       <pointLight position={[6, -2, 3]} intensity={18} color="#e869a6" distance={16} />
-      <PearlCloudField reducedMotion={reducedMotion} />
-      <GlobeScene reducedMotion={reducedMotion} />
-      <FlightScene reducedMotion={reducedMotion} />
+      <PearlCloudField reducedMotion={reducedMotion} settled={settled} />
+      <GlobeScene reducedMotion={reducedMotion} interactive={settled} />
+      <FlightScene reducedMotion={reducedMotion} settled={settled} />
     </Canvas>
   );
 }
 
 export default function App() {
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [settled, setSettled] = useState(false);
+  const [entered, setEntered] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -93,10 +111,19 @@ export default function App() {
     return () => media.removeEventListener("change", sync);
   }, []);
 
+  useEffect(() => {
+    if (reducedMotion) {
+      setSettled(true);
+      return;
+    }
+    const timer = window.setTimeout(() => setSettled(true), INTRO_MS);
+    return () => window.clearTimeout(timer);
+  }, [reducedMotion]);
+
   return (
-    <main className={`intro-lab${reducedMotion ? " reduced-motion" : ""}`}>
+    <main className={`intro-lab${reducedMotion ? " reduced-motion" : ""}${settled ? " intro-settled" : ""}${entered ? " entered" : ""}`}>
       <div className="canvas-wrap" aria-hidden="true">
-        <AtmosphereScene reducedMotion={reducedMotion} />
+        <AtmosphereScene reducedMotion={reducedMotion} settled={settled} />
       </div>
       <div className="soft-glow glow-a" aria-hidden="true" />
       <div className="soft-glow glow-b" aria-hidden="true" />
@@ -107,8 +134,29 @@ export default function App() {
         <span className="brand-rocio">ROCÍO RUIZ</span>
       </section>
 
-      <div className="phase-chip" aria-hidden="true">FASE 5 · IDENTIDAD</div>
-      <div className="corner-note" aria-hidden="true"><span className="dot" />AVIÓN · ÓRBITA · IDENTIDAD</div>
+      {!settled && !reducedMotion && (
+        <button className="skip-intro" type="button" onClick={() => setSettled(true)}>
+          Saltar intro
+        </button>
+      )}
+
+      <div className="entry-actions" aria-hidden={!settled}>
+        <button className="enter-button" type="button" onClick={() => setEntered(true)} disabled={!settled}>
+          <span>ENTRAR</span>
+          <span aria-hidden="true" className="enter-arrow">↗</span>
+        </button>
+        <p>Mueve el cursor sobre el mundo</p>
+      </div>
+
+      <div className="phase-chip" aria-hidden="true">FASE 6 · INTERACCIÓN</div>
+      <div className="corner-note" aria-hidden="true"><span className="dot" />{settled ? "MUNDO VIVO · LISTO PARA ENTRAR" : "AVIÓN · ÓRBITA · IDENTIDAD"}</div>
+
+      <section className="home-placeholder" aria-hidden={!entered}>
+        <p>LANGUAGE SCHOOL</p>
+        <strong>HOME · PLACEHOLDER</strong>
+        <span>La FASE 7 sustituirá este corte por la transición atravesando el globo.</span>
+        <button type="button" onClick={() => setEntered(false)}>Volver a la entrada</button>
+      </section>
     </main>
   );
 }
