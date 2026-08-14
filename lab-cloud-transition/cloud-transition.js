@@ -19,7 +19,7 @@ const C_WHITE   = new THREE.Color("#ffffff");
 const C_BG      = new THREE.Color("#fffcfd");
 
 // ─── Timing ───────────────────────────────────────────────────────────────────
-const DURATION  = 1800; // ms
+const DURATION  = 2800; // ms — 1 extra second, slower & smoother
 
 // ─── Shaders ─────────────────────────────────────────────────────────────────
 
@@ -342,26 +342,27 @@ function runTransition(href) {
       }
     });
 
-    // ── Camera: accelerating dive ────────────────────────────────────────────
+    // ── Camera: slow, dreamy glide ──────────────────────────────────────────
     const flyP = Math.min(progress / 0.9, 1);
+    // Gentle ease-in-out — no hard acceleration
     const ease = flyP < 0.5
       ? 2 * flyP * flyP
-      : 1 - Math.pow(-2 * flyP + 2, 3) / 2; // ease-in-out-cubic
+      : 1 - Math.pow(-2 * flyP + 2, 2) / 2; // softer ease-in-out-quad
 
-    camera.position.z = 8 - ease * 13.5;
-    camera.position.y = Math.sin(ease * Math.PI) * 0.8;
+    camera.position.z = 8 - ease * 10.0;   // less aggressive dive
+    camera.position.y = Math.sin(ease * Math.PI) * 0.4; // gentler vertical drift
 
-    // Subtle spiral
-    const spiral = ease * Math.PI * 0.4;
-    camera.position.x = Math.sin(spiral) * ease * 0.6;
-    camera.rotation.z = Math.sin(ease * Math.PI) * 0.04;
+    // Very subtle spiral — barely perceptible
+    const spiral = ease * Math.PI * 0.15;
+    camera.position.x = Math.sin(spiral) * ease * 0.2;
+    camera.rotation.z = Math.sin(ease * Math.PI) * 0.015; // minimal tilt
 
     // ── Camera shake on lightning ────────────────────────────────────────────
     if (shakeDecay > 0) {
-      shakeDecay -= 0.05;
+      shakeDecay -= 0.03; // slower shake decay = smoother
       shake.set(
-        (Math.random() - 0.5) * 0.08 * shakeDecay,
-        (Math.random() - 0.5) * 0.06 * shakeDecay,
+        (Math.random() - 0.5) * 0.025 * shakeDecay, // much gentler shake
+        (Math.random() - 0.5) * 0.018 * shakeDecay,
         0
       );
       camera.position.add(shake);
@@ -384,27 +385,27 @@ function runTransition(href) {
 
     // ── Lightning flash ──────────────────────────────────────────────────────
     if (progress > nextFlash && progress < 0.72) {
-      const intensity = THREE.MathUtils.randFloat(12, 30);
+      const intensity = THREE.MathUtils.randFloat(5, 14); // softer light
       flashLight.intensity  = intensity;
-      flashLight2.intensity = intensity * 0.6;
+      flashLight2.intensity = intensity * 0.4;
       flashLight.color.copy(Math.random() > 0.4 ? C_MID : C_SOFT);
 
-      // Camera shake
-      shakeDecay = 1.0;
+      // Camera shake — very subtle
+      shakeDecay = 0.5;
 
       // Quick full-screen flash (white/rose)
       fsMat.uniforms.uColor.value.copy(Math.random() > 0.5 ? C_WHITE : C_SOFT);
-      fsMat.uniforms.uOpacity.value = THREE.MathUtils.randFloat(0.3, 0.65);
+      fsMat.uniforms.uOpacity.value = THREE.MathUtils.randFloat(0.1, 0.3); // much softer flash
 
-      // Schedule fade-off
-      const decayTime = THREE.MathUtils.randInt(50, 110);
+      // Schedule fade-off — longer decay = smoother
+      const decayTime = THREE.MathUtils.randInt(120, 250);
       setTimeout(() => {
         flashLight.intensity  = 0;
         flashLight2.intensity = 0;
         fsMat.uniforms.uOpacity.value = 0;
       }, decayTime);
 
-      nextFlash = progress + THREE.MathUtils.randFloat(0.07, 0.18);
+      nextFlash = progress + THREE.MathUtils.randFloat(0.14, 0.28); // less frequent flashes
     }
 
     // Final white out
