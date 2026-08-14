@@ -3,6 +3,7 @@ import { Cloud, Clouds } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import FlightScene from "./FlightScene";
+import GlobeScene from "./GlobeScene";
 
 function PearlCloudField({ reducedMotion }: { reducedMotion: boolean }) {
   const group = useRef<THREE.Group>(null);
@@ -30,72 +31,12 @@ function PearlCloudField({ reducedMotion }: { reducedMotion: boolean }) {
   return (
     <group ref={group}>
       <Clouds limit={220} material={THREE.MeshLambertMaterial}>
-        <Cloud
-          seed={11}
-          position={[-5.2, 2.25, -5.4]}
-          bounds={[5.8, 2.1, 2.5]}
-          segments={28}
-          volume={7}
-          growth={6}
-          fade={24}
-          opacity={0.32}
-          speed={cloudSpeed}
-        />
-        <Cloud
-          seed={17}
-          position={[5.4, 2.5, -4.5]}
-          bounds={[5, 2, 2.2]}
-          segments={26}
-          volume={6}
-          growth={5.5}
-          fade={22}
-          opacity={0.29}
-          speed={cloudSpeed * 0.8}
-        />
-        <Cloud
-          seed={23}
-          position={[-5.3, -2.05, -1.2]}
-          bounds={[5.4, 2.4, 2.6]}
-          segments={30}
-          volume={7}
-          growth={6}
-          fade={20}
-          opacity={0.38}
-          speed={cloudSpeed * 1.15}
-        />
-        <Cloud
-          seed={29}
-          position={[5.5, -1.9, -0.5]}
-          bounds={[5.6, 2.25, 2.6]}
-          segments={30}
-          volume={7}
-          growth={6.2}
-          fade={20}
-          opacity={0.38}
-          speed={cloudSpeed}
-        />
-        <Cloud
-          seed={31}
-          position={[-7.2, 0.3, 2.4]}
-          bounds={[4.4, 2, 1.8]}
-          segments={24}
-          volume={5}
-          growth={5}
-          fade={18}
-          opacity={0.22}
-          speed={cloudSpeed * 0.7}
-        />
-        <Cloud
-          seed={37}
-          position={[7.1, 0.55, 2.6]}
-          bounds={[4.2, 1.9, 1.8]}
-          segments={24}
-          volume={5}
-          growth={5}
-          fade={18}
-          opacity={0.22}
-          speed={cloudSpeed * 0.7}
-        />
+        <Cloud seed={11} position={[-5.2, 2.25, -5.4]} bounds={[5.8, 2.1, 2.5]} segments={28} volume={7} growth={6} fade={24} opacity={0.32} speed={cloudSpeed} />
+        <Cloud seed={17} position={[5.4, 2.5, -4.5]} bounds={[5, 2, 2.2]} segments={26} volume={6} growth={5.5} fade={22} opacity={0.29} speed={cloudSpeed * 0.8} />
+        <Cloud seed={23} position={[-5.3, -2.05, -1.2]} bounds={[5.4, 2.4, 2.6]} segments={30} volume={7} growth={6} fade={20} opacity={0.38} speed={cloudSpeed * 1.15} />
+        <Cloud seed={29} position={[5.5, -1.9, -0.5]} bounds={[5.6, 2.25, 2.6]} segments={30} volume={7} growth={6.2} fade={20} opacity={0.38} speed={cloudSpeed} />
+        <Cloud seed={31} position={[-7.2, 0.3, 2.4]} bounds={[4.4, 2, 1.8]} segments={24} volume={5} growth={5} fade={18} opacity={0.22} speed={cloudSpeed * 0.7} />
+        <Cloud seed={37} position={[7.1, 0.55, 2.6]} bounds={[4.2, 1.9, 1.8]} segments={24} volume={5} growth={5} fade={18} opacity={0.22} speed={cloudSpeed * 0.7} />
       </Clouds>
     </group>
   );
@@ -118,6 +59,7 @@ function AtmosphereScene({ reducedMotion }: { reducedMotion: boolean }) {
       <pointLight position={[6, -2, 3]} intensity={20} color="#e869a6" distance={16} />
 
       <PearlCloudField reducedMotion={reducedMotion} />
+      <GlobeScene reducedMotion={reducedMotion} />
       <FlightScene reducedMotion={reducedMotion} />
     </Canvas>
   );
@@ -144,20 +86,19 @@ export default function App() {
       <div className="soft-glow glow-b" aria-hidden="true" />
 
       <section className="lab-panel" aria-label="Estado del laboratorio 3D">
-        <p className="phase">FASE 2 · VIAJE</p>
-        <p className="phase-title">Avión rosa</p>
-        <p className="phase-copy">El símbolo de viaje entra cerca de cámara, atraviesa el cielo perla y se dirige al punto donde aparecerá el globo.</p>
+        <p className="phase">FASE 3 · DESCUBRIMIENTO</p>
+        <p className="phase-title">Globo 3D vivo</p>
+        <p className="phase-copy">El avión abre el recorrido y descubre un planeta perla con líneas magenta, deformación orgánica mínima y respuesta suave al cursor.</p>
       </section>
 
       <div className="corner-note" aria-hidden="true">
         <span className="dot" />
-        RECORRIDO 3D · 7.2 S · LOOP DE LABORATORIO
+        MUEVE EL CURSOR · GLOBO VIVO · VIAJE EN LOOP
       </div>
 
-      <div className="destination-marker" aria-hidden="true">
-        <span className="destination-ring" />
-        <span className="destination-dot" />
-        <small>PRÓXIMO · GLOBO 3D</small>
+      <div className="brand-whisper" aria-hidden="true">
+        <span>LANGUAGE</span>
+        <strong>WORLD</strong>
       </div>
     </main>
   );
