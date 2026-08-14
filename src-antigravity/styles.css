@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playball&display=swap');
+
+:root {
+  --color-magenta: #d62974;
+  --color-magenta-light: #f4a7c8;
+  --color-white: #ffffff;
+  --color-pearl: #fffcfd;
+  --color-dark: #333333;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-pearl);
+  font-family: 'Montserrat', sans-serif;
+  color: var(--color-dark);
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Canvas Container */
+.canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* UI Overlay */
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Brand Lockup */
+.brand-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  /* Will be animated by GSAP or React state */
+}
+
+.brand-language {
+  font-size: 1.2rem;
+  letter-spacing: 0.4em;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: -10px;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.brand-school {
+  font-family: 'Playball', cursive;
+  font-size: 6rem;
+  color: var(--color-magenta);
+  line-height: 1;
+  text-shadow: 0 4px 12px rgba(214, 41, 116, 0.15);
+  margin-bottom: 5px;
+  font-weight: 400;
+}
+
+.brand-rocio {
+  font-size: 0.9rem;
+  letter-spacing: 0.3em;
+  font-weight: 600;
+  color: #777;
+  text-transform: uppercase;
+}
+
+.divider {
+  width: 80px;
+  height: 1px;
+  background-color: var(--color-magenta-light);
+  margin: 15px 0;
+  position: relative;
+}
+.divider::after {
+  content: '♥';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-pearl);
+  padding: 0 10px;
+  color: var(--color-magenta);
+  font-size: 0.8rem;
+}
+
+
+/* Actions */
+.actions-container {
+  position: absolute;
+  bottom: 15%;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn-enter {
+  pointer-events: auto;
+  background-color: var(--color-magenta);
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(214, 41, 116, 0.3);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-enter:hover, .btn-enter:focus-visible {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(214, 41, 116, 0.4);
+  background-color: #c22066;
+  outline: none;
+}
+
+.btn-enter .arrow {
+  transition: transform 0.3s ease;
+}
+
+.btn-enter:hover .arrow {
+  transform: translateX(4px) translateY(-4px);
+}
+
+.instruction {
+  font-size: 0.85rem;
+  color: #888;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.skip-btn {
+  position: absolute;
+  bottom: 30px;
+  right: 40px;
+  pointer-events: auto;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.2s;
+  z-index: 20;
+}
+
+.skip-btn:hover, .skip-btn:focus-visible {
+  color: var(--color-magenta);
+  outline: none;
+}
+
+/* Reduced Motion specific states */
+.reduced-motion * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Vignette */
+.vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, transparent 40%, rgba(255, 252, 254, 0.6) 100%);
+  pointer-events: none;
+  z-index: 5;
+}
