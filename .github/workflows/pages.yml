@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout intro lab
         uses: actions/checkout@v7
 
       - name: Setup Node
@@ -26,11 +26,45 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install dependencies
+      - name: Install intro dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Validate and build
+      - name: Validate and build intro lab
         run: npm run check
+
+      - name: Checkout Language School V3
+        uses: actions/checkout@v7
+        with:
+          repository: izc05/LANGUAGE-SCHOOL.
+          ref: feat/v3-platform-structure
+          path: language-school-v3
+
+      - name: Prepare premium V3 demo for Pages subpath
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('language-school-v3/v3/frontend/src/main.tsx')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace(
+              '<BrowserRouter>',
+              '<BrowserRouter basename={import.meta.env.BASE_URL}>',
+          )
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Build premium Language School V3 demo
+        working-directory: language-school-v3/v3/frontend
+        env:
+          VITE_APP_MODE: demo
+        run: |
+          npm ci
+          npm run build -- --base=/web-v1.1/premium-v3/
+
+      - name: Add premium demo to Pages artifact
+        run: |
+          rm -rf dist/premium-v3
+          mkdir -p dist/premium-v3
+          cp -a language-school-v3/v3/frontend/dist/. dist/premium-v3/
 
       - name: Upload downloadable preview
         uses: actions/upload-artifact@v7
