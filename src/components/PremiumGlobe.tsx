@@ -12,8 +12,8 @@ export default function PremiumGlobe({ introComplete, globeScaleRef }: { introCo
   const haloRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
-  // Load the earth texture we downloaded
-  const earthMap = useTexture("/web-v1.1/earth.jpg");
+  // Load the earth texture dynamically using BASE_URL to prevent 404s on GitHub Pages
+  const earthMap = useTexture(`${import.meta.env.BASE_URL}earth.jpg`);
 
   // Smooth dampening values
   const targetScale = useRef(1);

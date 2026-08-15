@@ -50,13 +50,25 @@ body, html {
   pointer-events: none;
 }
 
+.bottom-ui-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: clamp(2rem, 6vh, 4rem);
+  gap: clamp(2rem, 4vh, 3rem);
+  pointer-events: none;
+  z-index: 4;
+}
+
 /* Brand Lockup */
 .brand-lockup {
-  position: absolute;
-  z-index: 4;
-  top: calc(50% + 9.5rem);
-  left: 50%;
-  transform: translate(-50%, 20px); /* 20px is animated to 0 by GSAP */
+  position: relative;
+  transform: translateY(20px); /* 20px is animated to 0 by GSAP */
   opacity: 0;
   display: flex;
   flex-direction: column;
@@ -116,15 +128,11 @@ body, html {
 
 /* Actions */
 .actions-container {
-  position: absolute;
-  bottom: clamp(1.8rem, 5vh, 3.8rem);
-  left: 50%;
-  transform: translate(-50%, 0);
-  width: 100%;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: clamp(15px, 2vh, 20px);
   opacity: 0;
   pointer-events: none;
 }
@@ -278,7 +286,7 @@ body, html {
 
 /* Media Queries for Responsive Design */
 @media (max-width: 760px) {
-  .brand-lockup {
-    top: calc(50% + 7.8rem);
+  .brand-school {
+    font-size: clamp(3.5rem, 12vw, 4.5rem);
   }
 }

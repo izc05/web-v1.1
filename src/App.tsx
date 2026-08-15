@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, Preload } from "@react-three/drei";
+import { Environment, Preload, Lightformer } from "@react-three/drei";
 import { useEffect, useRef, useState, Suspense } from "react";
 import gsap from "gsap";
 import * as THREE from "three";
@@ -66,7 +66,7 @@ export default function App() {
 
     // Camera moves forward through clouds
     tl.to(cameraZ, {
-      current: 5,
+      current: 9, // Fix camera size (globe 35-45%)
       duration: INTRO_DURATION * 0.7,
       ease: "power1.inOut"
     }, 0);
@@ -148,7 +148,14 @@ export default function App() {
 
         <Airplane progressRef={planeProgress} />
 
-        <Environment preset="studio" />
+        <Environment resolution={256}>
+          <group rotation={[-Math.PI / 2, 0, 0]}>
+            <Lightformer form="circle" intensity={4} rotation-x={Math.PI / 2} position={[0, 5, -9]} scale={2} />
+            <Lightformer form="circle" intensity={2} rotation-y={Math.PI / 2} position={[-5, 1, -1]} scale={2} />
+            <Lightformer form="circle" intensity={2} rotation-y={Math.PI / 2} position={[5, 1, -1]} scale={2} />
+            <Lightformer form="circle" intensity={2} rotation-y={-Math.PI / 2} position={[10, 1, 0]} scale={8} />
+          </group>
+        </Environment>
         <Preload all />
       </Canvas>
 
@@ -156,35 +163,37 @@ export default function App() {
 
       {/* HTML Overlay */}
       <div className="ui-overlay">
-        <section ref={lockupRef} className="brand-lockup" aria-label="Language School Rocío Ruiz">
-          <span className="brand-language">LANGUAGE</span>
-          <h1 className="brand-school">School</h1>
-          <div className="divider" />
-          <span className="brand-rocio">ROCÍO RUIZ</span>
-        </section>
+        <div className="bottom-ui-wrapper">
+          <section ref={lockupRef} className="brand-lockup" aria-label="Language School Rocío Ruiz">
+            <span className="brand-language">LANGUAGE</span>
+            <h1 className="brand-school">School</h1>
+            <div className="divider" />
+            <span className="brand-rocio">ROCÍO RUIZ</span>
+          </section>
 
-        <div ref={actionsRef} className="actions-container">
-          <p className="instruction">Mueve el cursor sobre el mundo</p>
-          <button 
-            className="btn-enter" 
-            onClick={() => {
-              if (isTransitioning) return;
-              setIsTransitioning(true);
-              if (typeof window.triggerCloudTransition === "function") {
-                window.triggerCloudTransition(() => {
+          <div ref={actionsRef} className="actions-container">
+            <p className="instruction">Mueve el cursor sobre el mundo</p>
+            <button 
+              className="btn-enter" 
+              onClick={() => {
+                if (isTransitioning) return;
+                setIsTransitioning(true);
+                if (typeof window.triggerCloudTransition === "function") {
+                  window.triggerCloudTransition(() => {
+                    setEntered(true);
+                    setIsTransitioning(false);
+                  });
+                } else {
                   setEntered(true);
                   setIsTransitioning(false);
-                });
-              } else {
-                setEntered(true);
-                setIsTransitioning(false);
-              }
-            }}
-            disabled={!introComplete || isTransitioning}
-          >
-            <span>{isTransitioning ? "ENTRANDO..." : "ENTRAR"}</span>
-            {!isTransitioning && <span className="arrow">→</span>}
-          </button>
+                }
+              }}
+              disabled={!introComplete || isTransitioning}
+            >
+              <span>{isTransitioning ? "ENTRANDO..." : "ENTRAR"}</span>
+              {!isTransitioning && <span className="arrow">→</span>}
+            </button>
+          </div>
         </div>
 
         {!introComplete && !reducedMotion && (
