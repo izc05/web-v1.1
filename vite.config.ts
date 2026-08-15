@@ -10,7 +10,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main:             resolve(__dirname, "index.html"),
-        antigravity:      resolve(__dirname, "antigravity.html"),
         cloudTransition:  resolve(__dirname, "lab-cloud-transition/demo.html"),
       },
     },
