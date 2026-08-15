@@ -6,7 +6,7 @@ import * as THREE from "three";
 const MAGENTA = "#d62974";
 const MAGENTA_LIGHT = "#f4a7c8";
 
-export default function PremiumGlobe({ introComplete }: { introComplete: boolean }) {
+export default function PremiumGlobe({ introComplete, globeScaleRef }: { introComplete: boolean; globeScaleRef: React.MutableRefObject<number> }) {
   const groupRef = useRef<THREE.Group>(null);
   const coreRef = useRef<THREE.Mesh>(null);
   const haloRef = useRef<THREE.Group>(null);
@@ -21,6 +21,11 @@ export default function PremiumGlobe({ introComplete }: { introComplete: boolean
 
   useFrame((state, delta) => {
     if (!groupRef.current || !coreRef.current || !haloRef.current) return;
+
+    // Apply scale dynamically from GSAP intro animation
+    if (!introComplete) {
+      groupRef.current.scale.setScalar(globeScaleRef.current);
+    }
 
     // Gentle rotation
     groupRef.current.rotation.y += delta * 0.015;

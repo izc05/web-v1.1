@@ -102,6 +102,7 @@ export default function App() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [settled, setSettled] = useState(false);
   const [entered, setEntered] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -141,9 +142,26 @@ export default function App() {
       )}
 
       <div className="entry-actions" aria-hidden={!settled}>
-        <button className="enter-button" type="button" onClick={() => setEntered(true)} disabled={!settled}>
-          <span>ENTRAR</span>
-          <span aria-hidden="true" className="enter-arrow">↗</span>
+        <button
+          className="enter-button"
+          type="button"
+          disabled={!settled || isTransitioning}
+          onClick={() => {
+            if (isTransitioning) return;
+            setIsTransitioning(true);
+            if (typeof window.triggerCloudTransition === "function") {
+              window.triggerCloudTransition(() => {
+                setEntered(true);
+                setIsTransitioning(false);
+              });
+            } else {
+              setEntered(true);
+              setIsTransitioning(false);
+            }
+          }}
+        >
+          <span>{isTransitioning ? "ENTRANDO..." : "ENTRAR"}</span>
+          {!isTransitioning && <span aria-hidden="true" className="enter-arrow">↗</span>}
         </button>
         <p>Mueve el cursor sobre el mundo</p>
       </div>

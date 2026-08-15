@@ -1,6 +1,6 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, Preload } from "@react-three/drei";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import gsap from "gsap";
 import * as THREE from "three";
 
@@ -10,16 +10,25 @@ import Airplane from "./components/Airplane";
 
 const INTRO_DURATION = 8; // seconds
 
+// ─── Camera Controller Component ─────────────────────────────────────────────
+// Native R3F component to handle GSAP-animated camera movements without leaks
+function CameraController({ cameraZ }: { cameraZ: React.MutableRefObject<number> }) {
+  useFrame((state) => {
+    state.camera.position.z = cameraZ.current;
+  });
+  return null;
+}
+
 export default function App() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [introComplete, setIntroComplete] = useState(false);
   const [entered, setEntered] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Animation values
   const planeProgress = useRef(0);
   const cameraZ = useRef(15);
   const globeScale = useRef(0);
-  const uiOpacity = useRef(0);
 
   // Refs for HTML elements
   const lockupRef = useRef<HTMLDivElement>(null);
@@ -38,7 +47,6 @@ export default function App() {
       planeProgress.current = 1;
       cameraZ.current = 5;
       globeScale.current = 1;
-      uiOpacity.current = 1;
       setIntroComplete(true);
       if (lockupRef.current) gsap.set(lockupRef.current, { opacity: 1, y: 0 });
       if (actionsRef.current) gsap.set(actionsRef.current, { opacity: 1 });
@@ -105,21 +113,15 @@ export default function App() {
   };
 
   return (
-    <main className={`canvas-container ${reducedMotion ? "reduced-motion" : ""}`}>
+    <main className={`canvas-container ${reducedMotion ? "reduced-motion" : ""}${entered ? " entered" : ""}`}>
       {/* 3D Scene */}
       <Canvas
         dpr={[1, 1.5]}
         camera={{ position: [0, 0, 15], fov: 40 }}
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
-        onCreated={({ camera }) => {
-          // A tiny useFrame to update camera manually based on our GSAP value
-          gsap.ticker.add(() => {
-            if (camera && cameraZ.current) {
-              camera.position.z = cameraZ.current;
-            }
-          });
-        }}
       >
+        <CameraController cameraZ={cameraZ} />
+        
         <color attach="background" args={["#fffcfd"]} />
         <fog attach="fog" args={["#fffcfd", 5, 20]} />
         
@@ -129,9 +131,9 @@ export default function App() {
 
         <Atmosphere />
         
-        <group scale={globeScale.current}>
-          <PremiumGlobe introComplete={introComplete} />
-        </group>
+        <Suspense fallback={null}>
+          <PremiumGlobe introComplete={introComplete} globeScaleRef={globeScale} />
+        </Suspense>
 
         <Airplane progressRef={planeProgress} />
 
@@ -151,24 +153,27 @@ export default function App() {
         </section>
 
         <div ref={actionsRef} className="actions-container">
-          {!entered ? (
-            <>
-              <p className="instruction">Mueve el cursor sobre el mundo</p>
-              <button 
-                className="btn-enter" 
-                onClick={() => setEntered(true)}
-                disabled={!introComplete}
-              >
-                ENTRAR <span className="arrow">→</span>
-              </button>
-            </>
-          ) : (
-            <div style={{ pointerEvents: 'auto', textAlign: 'center', background: 'rgba(255,255,255,0.8)', padding: '20px', borderRadius: '10px' }}>
-              <h2>HOME PLACEHOLDER</h2>
-              <p>Esperando transición de la FASE 7</p>
-              <button onClick={() => setEntered(false)} style={{marginTop: 10, padding: 8}}>Volver</button>
-            </div>
-          )}
+          <p className="instruction">Mueve el cursor sobre el mundo</p>
+          <button 
+            className="btn-enter" 
+            onClick={() => {
+              if (isTransitioning) return;
+              setIsTransitioning(true);
+              if (typeof window.triggerCloudTransition === "function") {
+                window.triggerCloudTransition(() => {
+                  setEntered(true);
+                  setIsTransitioning(false);
+                });
+              } else {
+                setEntered(true);
+                setIsTransitioning(false);
+              }
+            }}
+            disabled={!introComplete || isTransitioning}
+          >
+            <span>{isTransitioning ? "ENTRANDO..." : "ENTRAR"}</span>
+            {!isTransitioning && <span className="arrow">→</span>}
+          </button>
         </div>
 
         {!introComplete && !reducedMotion && (
@@ -177,6 +182,13 @@ export default function App() {
           </button>
         )}
       </div>
+
+      <section className="home-placeholder" aria-hidden={!entered}>
+        <p>LANGUAGE SCHOOL</p>
+        <strong>HOME · PLACEHOLDER</strong>
+        <span>La FASE 7 sustituirá este corte por la transición atravesando el globo.</span>
+        <button type="button" onClick={() => setEntered(false)}>Volver a la entrada</button>
+      </section>
     </main>
   );
 }

@@ -8,7 +8,7 @@
  * Usage: <script type="module" src="cloud-transition.js"></script>
  */
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
+import * as THREE from "three";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C_DEEP    = new THREE.Color("#c2185b"); // deep magenta core
@@ -41,21 +41,20 @@ const cloudVert = /* glsl */`
     vAlpha = aAlpha;
     vDepth = aDepth;
 
-    // Fly position: push each cloud layer toward camera
     vec3 pos = position;
-    float zShift = uProgress * 28.0 * (0.5 + aDepth * 0.5);
+    // Each depth layer moves at different speed — gives parallax feel
+    float zShift = uProgress * 22.0 * (0.3 + aDepth * 0.7);
     pos.z += zShift;
 
-    // Slight swirl drift
-    float drift = uTime * 0.08 * (1.0 + aDepth * 0.5);
-    pos.x += sin(drift + aDepth * 6.28) * 0.6;
-    pos.y += cos(drift * 0.7 + aDepth * 3.14) * 0.3;
+    // Very gentle, independent drift per cloud
+    float drift = uTime * 0.04 * (0.6 + aDepth * 0.4);
+    pos.x += sin(drift + aDepth * 6.28) * 0.25;
+    pos.y += cos(drift * 0.8 + aDepth * 2.1) * 0.12;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `;
 
-/** Procedural cloud fragment using value noise */
 const cloudFrag = /* glsl */`
   varying vec2  vUv;
   varying float vDepth;
@@ -67,7 +66,7 @@ const cloudFrag = /* glsl */`
   uniform vec3  uColorA;
   uniform vec3  uColorB;
 
-  // ── Value noise ────────────────────────────────────────────────────────────
+  // ── Hash & value noise ────────────────────────────────────────────────────
   float hash(vec2 p) {
     p = fract(p * vec2(127.1, 311.7));
     p += dot(p, p + 45.32);
@@ -83,6 +82,8 @@ const cloudFrag = /* glsl */`
       u.y
     );
   }
+
+  // Domain-warped FBM for bumpy cloud texture
   float fbm(vec2 p) {
     float v = 0.0, a = 0.5;
     for (int i = 0; i < 5; i++) {
@@ -93,34 +94,58 @@ const cloudFrag = /* glsl */`
     return v;
   }
 
+  // ── Cumulus silhouette: 5 overlapping ellipses (top lobes) ──────────────
+  float cloudShape(vec2 uv) {
+    // Base body — wide, flat ellipse
+    float body = length(uv * vec2(1.0, 1.6)) - 0.28;
+
+    // Top lobe — center bump
+    float lobe1 = length((uv - vec2( 0.00,  0.14)) * vec2(1.1, 1.0)) - 0.18;
+    // Left lobe
+    float lobe2 = length((uv - vec2(-0.15,  0.10)) * vec2(1.2, 1.0)) - 0.14;
+    // Right lobe
+    float lobe3 = length((uv - vec2( 0.15,  0.09)) * vec2(1.2, 1.0)) - 0.13;
+    // Far left lobe
+    float lobe4 = length((uv - vec2(-0.26,  0.03)) * vec2(1.3, 1.1)) - 0.10;
+    // Far right lobe
+    float lobe5 = length((uv - vec2( 0.26,  0.02)) * vec2(1.3, 1.1)) - 0.10;
+
+    // Union (smooth min) of all parts
+    float d = min(body, min(lobe1, min(lobe2, min(lobe3, min(lobe4, lobe5)))));
+    return d; // negative = inside cloud
+  }
+
   void main() {
-    // Center the UV so 0,0 is middle
-    vec2 uv = vUv - 0.5;
+    vec2 uv = vUv - 0.5; // center
 
-    // Distance from center with slight stretch
-    float d = length(uv * vec2(1.0, 1.3));
+    // Animated domain warp — slow, gentle
+    float t = uTime * 0.04 + vDepth * 5.1;
+    vec2 warp = vec2(
+      fbm(uv * 1.8 + vec2(t,       t * 0.5)),
+      fbm(uv * 1.8 + vec2(t * 0.7, t + 3.7))
+    ) * 0.14; // small warp keeps edges recognisable
 
-    // Hard circular mask
-    if (d > 0.48) discard;
+    float sdf = cloudShape(uv + warp);
 
-    // Soft edge
-    float edgeFade = 1.0 - smoothstep(0.25, 0.48, d);
+    // Hard exterior discard
+    if (sdf > 0.04) discard;
 
-    // Animated cloud noise
-    float t   = uTime * 0.06 + vDepth * 4.3;
-    vec2 flow = vec2(t, t * 0.6);
-    float cloud = fbm(uv * 2.8 + flow);
-    cloud = pow(cloud, 1.4);
+    // Edge sharpness — tight smoothstep gives crisp defined border
+    float edgeFade = 1.0 - smoothstep(-0.04, 0.03, sdf);
 
-    // Build alpha from noise + edge
-    float alpha = cloud * edgeFade * vAlpha;
-    alpha *= (1.0 - uFade * 1.4);
+    // Interior cloud texture — bumpy highlights toward top
+    float tex = fbm(uv * 3.5 + vec2(t * 0.5, -t * 0.3));
+    tex = pow(tex, 0.9);
+
+    // Soft shadow at bottom, bright at top
+    float shading = smoothstep(-0.3, 0.2, uv.y); // 0=dark bottom, 1=bright top
+
+    float alpha = edgeFade * vAlpha * (1.0 - uFade * 1.3);
     alpha = clamp(alpha, 0.0, 1.0);
 
-    // Color: blend depth-based warm pink to soft haze
-    vec3 col = mix(uColorA, uColorB, cloud * 0.7 + vDepth * 0.3);
-    // Exposure boost near edges
-    col = mix(col, vec3(1.0), uFade * 0.85);
+    // Color: deep pink in body, bright petal at tops and highlights
+    vec3 col = mix(uColorA, uColorB, tex * 0.6 + shading * 0.5);
+    col = mix(col, vec3(1.0), uFade * 0.9);
 
     gl_FragColor = vec4(col, alpha);
   }
@@ -275,7 +300,7 @@ function buildScene(renderer) {
   const fsCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   fsScene.add(fsQuad);
 
-  return { scene, cloudMat, coreMat, flashLight, flashLight2, fsMat, fsScene, fsCamera };
+  return { scene, cloudMat, coreMat, flashLight, flashLight2, fsMat, fsQuad, fsScene, fsCamera };
 }
 
 // ─── Overlay canvas ───────────────────────────────────────────────────────────
@@ -297,7 +322,7 @@ function createOverlay() {
 }
 
 // ─── Run the transition ───────────────────────────────────────────────────────
-function runTransition(href) {
+function runTransition(hrefOrCallback) {
   const canvas = createOverlay();
   const W = window.innerWidth, H = window.innerHeight;
 
@@ -309,7 +334,7 @@ function runTransition(href) {
   const camera = new THREE.PerspectiveCamera(72, W / H, 0.01, 60);
   camera.position.set(0, 0, 8);
 
-  const { scene, cloudMat, coreMat, flashLight, flashLight2, fsMat, fsScene, fsCamera } =
+  const { scene, cloudMat, coreMat, flashLight, flashLight2, fsMat, fsQuad, fsScene, fsCamera } =
     buildScene(renderer);
 
   // Fade in
@@ -422,13 +447,46 @@ function runTransition(href) {
     // ── Done ─────────────────────────────────────────────────────────────────
     if (progress >= 1) {
       cancelAnimationFrame(rafId);
+      
+      // Clean up resources to prevent WebGL memory leaks
+      scene.traverse((obj) => {
+        if (obj.isMesh) {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach((m) => m.dispose());
+            } else {
+              obj.material.dispose();
+            }
+          }
+        }
+      });
+      
+      // Dispose shader materials and orthographic scene assets
+      cloudMat.dispose();
+      coreMat.dispose();
+      fsMat.dispose();
+      fsQuad.geometry.dispose();
+      fsQuad.material.dispose();
+      
       renderer.dispose();
-      window.location.href = href;
+      canvas.remove();
+
+      if (typeof hrefOrCallback === "function") {
+        hrefOrCallback();
+      } else {
+        window.location.href = hrefOrCallback;
+      }
     }
   }
 
   requestAnimationFrame(tick);
 }
+
+// Expose globally
+window.triggerCloudTransition = (callback) => {
+  runTransition(callback);
+};
 
 // ─── Interceptor ─────────────────────────────────────────────────────────────
 document.addEventListener("click", (e) => {
@@ -450,3 +508,4 @@ document.addEventListener("click", (e) => {
 }, { capture: true });
 
 console.log("☁️ Cloud Transition [PREMIUM] ready — Language School Rocío Ruiz");
+
