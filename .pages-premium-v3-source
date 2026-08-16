@@ -1,2 +1,2 @@
-Language School V3 source commit: 19298886d7f4f710275e302666aa1ec299d79463
-Purpose: trigger GitHub Pages rebuild of /premium-v3/ after removing inner pink wireframe lines and tuning DPR, transmission resolution, cloud density, and jet frame allocations for smoother rendering.
+Language School V3 source commit: af0963d9a3da693c3ea8f1e0ab97229d06b7e0d1
+Purpose: trigger GitHub Pages rebuild of /premium-v3/ after smoothing the jet exit and increasing premium cloud depth and segment quality.
