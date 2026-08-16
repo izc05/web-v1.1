@@ -1,2 +1,2 @@
-Language School Home V2 candidate source commit: 8f23ac8a939fbb5133727e3e20fdecb776d7f789
-Purpose: trigger isolated /home-v2/ preview rebuild with the complete premium public site plus the redesigned student access screen.
+Language School Home V2 candidate source commit: 6851a1ebbc1283181094cfe3b5aebfff510b3ee3
+Purpose: refresh /home-v2/ with richer real SVG assets, program-specific visual fallbacks, subtle scroll motion, pricing polish and the premium student dashboard.
