@@ -70,22 +70,6 @@ jobs:
             [390, 844],
           ]
 
-          async function revealWholePage(page) {
-            await page.evaluate(async () => {
-              const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-              const step = Math.max(420, Math.floor(window.innerHeight * 0.65))
-              const max = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)
-              for (let y = 0; y <= max; y += step) {
-                window.scrollTo(0, y)
-                await delay(70)
-              }
-              window.scrollTo(0, max)
-              await delay(120)
-              window.scrollTo(0, 0)
-              await delay(120)
-            })
-          }
-
           const browser = await chromium.launch()
           for (const [width, height] of viewports) {
             const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 })
@@ -93,11 +77,17 @@ jobs:
             const page = await context.newPage()
             for (const [name, path] of pages) {
               await page.goto(`${base}${path}`, { waitUntil: 'networkidle' })
-              await revealWholePage(page)
+              await page.evaluate(() => {
+                document.querySelectorAll('.public-reveal').forEach((node) => node.classList.add('is-visible'))
+                window.scrollTo(0, 0)
+              })
               await page.addStyleTag({ content: `
                 *, *::before, *::after { animation: none !important; transition: none !important; }
+                .public-reveal { opacity: 1 !important; transform: none !important; }
+                .site-header { position: static !important; }
                 html { scroll-behavior: auto !important; }
               ` })
+              await page.waitForTimeout(120)
               await page.screenshot({ path: `visual-audit/${name}-${width}.png`, fullPage: true })
             }
             await context.close()
@@ -107,7 +97,7 @@ jobs:
           node visual-audit.mjs
           printf 'candidate=e939e055318b3d7be9895e10f0f2b7743cb9fced\n' > visual-audit/PROVENANCE.txt
           printf 'widths=1440,1180,820,390\npages=home,programas,tarifas,profesores,sobre-nosotros,blog,articulo,contacto\n' >> visual-audit/PROVENANCE.txt
-          printf 'capture=full-page after real progressive scroll to trigger IntersectionObserver reveals\n' >> visual-audit/PROVENANCE.txt
+          printf 'capture=full-page in the normal post-scroll is-visible state; animations disabled only for deterministic audit capture\n' >> visual-audit/PROVENANCE.txt
 
       - name: Upload exact visual audit renders
         uses: actions/upload-artifact@v7
