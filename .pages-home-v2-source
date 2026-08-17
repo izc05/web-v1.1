@@ -1,2 +1,2 @@
-Language School Home V2 candidate source commit: e939e055318b3d7be9895e10f0f2b7743cb9fced
-Purpose: Phase 7A exact visual audit preview for the validated CMS-closeout candidate. No Language School code change; preview marker only.
+Language School Home V2 candidate source commit: d746903d9f3951072c7cfae88ad94071c0619cb8
+Purpose: Phase 7B.1 validated editorial-human SiteShell preview with consolidated public tokens, real responsive navigation, simplified topbar/footer, accessibility coverage and 39/39 E2E.
