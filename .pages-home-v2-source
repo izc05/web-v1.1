@@ -1,2 +1,2 @@
-Language School Home V2 candidate source commit: 1a884edbd5a2a74c3419490195cc2600ee54210b
-Purpose: refresh /home-v2/ with the Luis Carvajal location map, admin-selectable Home imagery, editable course covers and CMS-controlled hero photography for Teachers, About, Pricing, Blog and Contact.
+Language School Home V2 candidate source commit: 3d938a5e842a07d4480f131ddfacd214d5b7b765
+Purpose: refresh /home-v2/ with direct CMS image upload/change/remove controls backed by Biblioteca Multimedia, existing-media selection, upload recovery states and mobile-safe controls.
