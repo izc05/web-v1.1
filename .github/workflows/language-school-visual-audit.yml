@@ -1,0 +1,100 @@
+name: Language School exact visual audit
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.pages-home-v2-source'
+      - '.github/workflows/language-school-visual-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact Language School candidate
+        uses: actions/checkout@v7
+        with:
+          repository: izc05/LANGUAGE-SCHOOL.
+          ref: e939e055318b3d7be9895e10f0f2b7743cb9fced
+          path: language-school
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Build exact demo candidate
+        working-directory: language-school/v3/frontend
+        env:
+          VITE_APP_MODE: demo
+        run: |
+          npm ci
+          npm run build -- --base=/
+
+      - name: Install audit browser
+        working-directory: language-school/v3/e2e
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Render 7A audit matrix
+        working-directory: language-school/v3/e2e
+        run: |
+          ../frontend/node_modules/.bin/vite preview ../frontend --host 127.0.0.1 --port 4173 > /tmp/language-school-audit-preview.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          mkdir -p visual-audit
+          cat > visual-audit.mjs <<'JS'
+          import { chromium } from '@playwright/test'
+
+          const base = 'http://127.0.0.1:4173'
+          const pages = [
+            ['home', '/'],
+            ['programas', '/programas'],
+            ['tarifas', '/tarifas'],
+            ['profesores', '/profesores'],
+            ['sobre-nosotros', '/sobre-nosotros'],
+            ['blog', '/blog'],
+            ['articulo', '/blog/5-formas-de-ganar-confianza-al-hablar-ingles'],
+            ['contacto', '/contacto'],
+          ]
+          const viewports = [
+            [1440, 1000],
+            [1180, 900],
+            [820, 1024],
+            [390, 844],
+          ]
+
+          const browser = await chromium.launch()
+          for (const [width, height] of viewports) {
+            const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 })
+            await context.addInitScript(() => sessionStorage.setItem('language-school:intro-completed', 'true'))
+            const page = await context.newPage()
+            for (const [name, path] of pages) {
+              await page.goto(`${base}${path}`, { waitUntil: 'networkidle' })
+              await page.addStyleTag({ content: `
+                *, *::before, *::after { animation: none !important; transition: none !important; }
+                html { scroll-behavior: auto !important; }
+              ` })
+              await page.screenshot({ path: `visual-audit/${name}-${width}.png`, fullPage: true })
+            }
+            await context.close()
+          }
+          await browser.close()
+          JS
+          node visual-audit.mjs
+          printf 'candidate=e939e055318b3d7be9895e10f0f2b7743cb9fced\n' > visual-audit/PROVENANCE.txt
+          printf 'widths=1440,1180,820,390\npages=home,programas,tarifas,profesores,sobre-nosotros,blog,articulo,contacto\n' >> visual-audit/PROVENANCE.txt
+
+      - name: Upload exact visual audit renders
+        uses: actions/upload-artifact@v7
+        with:
+          name: language-school-7a-e939-renders
+          path: language-school/v3/e2e/visual-audit
+          if-no-files-found: error
+          retention-days: 7
